@@ -1,4 +1,4 @@
-for (let i=0; i<10; i++) {
-	msleep(1000);
+for (let i=0; i<20; i++) {
+	msleep(250);
 	digitalToggle(8);
 }

@@ -1,4 +1,5 @@
 #include "QuickjsEngine.h"
+#include "peac_bindings.h"
 
 QuickjsEngine::QuickjsEngine(const char *boot_) {
 	boot=boot_;
@@ -11,6 +12,7 @@ void QuickjsEngine::begin() {
     rt=JS_NewRuntime();
     ctx=JS_NewContext(rt);
 
+	peac_bindings_init(ctx);
     JSValue val=JS_Eval(ctx, boot, strlen(boot), "boot", JS_EVAL_TYPE_GLOBAL);
     /*if (JS_IsException(val))
         bootError=getExceptionMessage();*/
@@ -21,6 +23,8 @@ void QuickjsEngine::begin() {
 void QuickjsEngine::close() {
 	if (!rt || !ctx)
 		return; // should throw
+
+	peac_bindings_exit();
 
     JS_FreeContext(ctx);
     ctx=nullptr;

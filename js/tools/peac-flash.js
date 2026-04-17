@@ -47,7 +47,7 @@ class PeacFlasher {
             build_src_filter =
                 -<*>
                 ${"\n"+sourceDirs.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
-        `);
+        `+"\n");
     }
 
     async createBuildEvent() {
@@ -62,9 +62,11 @@ class PeacFlasher {
 
         ev.addIncludeDir(peabindGetLibConf("includeDir"));
         ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
+        ev.addIncludeDir(this.targetPath);
         ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addSourceDir(path.join(__dirname,"../../src"));
         ev.addSourceDir(this.targetPath);
+        ev.addSourceDir(peabindGetLibConf("source"));
 
         return ev;
     }
@@ -77,6 +79,8 @@ class PeacFlasher {
     }
 
     makeRelativeIfFile(fileOrDir) {
+        return fileOrDir;
+
         if (fs.statSync(fileOrDir).isDirectory())
             return fileOrDir;
 
