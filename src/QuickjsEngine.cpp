@@ -21,12 +21,6 @@ void QuickjsEngine::begin() {
 		errorMessage=jsvalCatchExceptionStdString();
 
 	jsvalFree(res);
-
-    //JSValue val=JS_Eval(ctx, boot, strlen(boot), "boot", JS_EVAL_TYPE_GLOBAL);
-    /*if (JS_IsException(val))
-        bootError=getExceptionMessage();*/
-
-    //JS_FreeValue(ctx, val);
 }
 
 void QuickjsEngine::close() {

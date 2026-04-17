@@ -66,7 +66,11 @@ class PeacFlasher {
         ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addSourceDir(path.join(__dirname,"../../src"));
         ev.addSourceDir(this.targetPath);
-        ev.addSourceDir(peabindGetLibConf("source"));
+
+        fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
+        if (!fs.existsSync(path.join(this.targetPath,"src-ext/pb.cpp")))
+            fs.symlinkSync(peabindGetLibConf("source"),path.join(this.targetPath,"src-ext/pb.cpp"));
+        ev.addSourceDir(path.join(this.targetPath,"src-ext"));
 
         return ev;
     }
