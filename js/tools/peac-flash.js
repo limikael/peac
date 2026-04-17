@@ -74,7 +74,8 @@ export async function peacFlash({cwd, port}) {
     let hookChannel=await loadHookChannel({
         cwd,
         keyword: "peac-plugin",
-        exportPath: "peac-build-hooks"
+        exportPath: "peac-build-hooks",
+        extraModuleDirs: path.join(__dirname,"../../packages")
     });
 
     let ev=await hookChannel.dispatch(new BuildEvent());
@@ -88,8 +89,15 @@ export async function peacFlash({cwd, port}) {
     ev.addSourceDir(path.join(__dirname,"../../src"));
     ev.addSourceDir(targetPath);
 
+    let bindings=ev.bindings.map(b=>{
+        if (typeof b=="string")
+            b=fs.readFileSync(b);
+
+        return b;
+    });
+
     await peabind({
-        idl: peabindMerge(ev.bindings),
+        idl: peabindMerge(bindings),
         target: "quickjs",
         output: path.join(targetPath,"peac_bindings.cpp"),
         prefix: "peac_bindings_"
@@ -107,7 +115,6 @@ export async function peacFlash({cwd, port}) {
 
     let iniSource=generatePlatformioIni({
         port,
-//        sourceDirs: ev.sourceDirs,
         sourceDirs: relativeSourceDirs,
         includeDirs: ev.includeDirs
     });
