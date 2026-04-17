@@ -19,5 +19,8 @@
     "hook-channel": "^1.0.0",
     "peabind": "link:../peabind",
     "read-package-up": "^12.0.0"
+  },
+  "devDependencies": {
+    "json5": "^2.2.3"
   }
 }

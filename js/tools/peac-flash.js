@@ -1,124 +1,136 @@
-import {readPackageUp} from "read-package-up";
+import {readPackageUpSync} from "read-package-up";
 import {dirnameFromImportMeta, runCommand} from "../utils/node-util.js";
 import path from "path";
 import fs from "fs";
 import {loadHookChannel, HookEvent} from "hook-channel";
 import {peabind, peabindMerge, peabindGetLibConf} from "peabind";
+import {escapeCString, unindent, autoIndent} from "../utils/lang-util.js";
+import JSON5 from "json5";
+import PeacBuildEvent from "./PeacBuildEvent.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
-function generatePlatformioIni({port, sourceDirs, includeDirs}) {
-    return (`
-[env:peac]
-platform = espressif32
-board = esp32-c3-devkitm-1
-framework = arduino
-build_unflags = -std=gnu++11  # remove the default
-build_flags = 
-    -DARDUINO_USB_MODE=1
-    -DARDUINO_USB_CDC_ON_BOOT=1 
-    -std=c++17
-    -DJS_STRICT_NAN_BOXING
-    -DJS_NO_REGEXP
-    -DJS_NO_MODULE_LOADER
-    -DJS_NO_OS
-    -DCONFIG_VERSION=\\"embedded\\"
-    -DEMSCRIPTEN
-${includeDirs.map(d=>`    -I${d}`).join("\n")}
-monitor_speed = 115200
-upload_port=${port}
-monitor_port=${port}
-build_src_filter =
-    -<*>
-${sourceDirs.map(d=>`    +<${d}>`).join("\n")}
-`);
-}
+class PeacFlasher {
+    constructor({cwd, port}) {
+        this.port=port;
 
-function escapeCString(str) {
-    return str
-        .replace(/\\/g, '\\\\')   // backslash
-        .replace(/"/g, '\\"')     // double quote
-        .replace(/\n/g, '\\n')    // newline
-        .replace(/\r/g, '\\r')    // carriage return
-        .replace(/\t/g, '\\t');   // tab
-}
-
-class BuildEvent extends HookEvent {
-    constructor() {
-        super("build");
-        this.bindings=[];
-        this.bootContent="";
-        this.sourceDirs=[];
-        this.includeDirs=[];
+        let up=readPackageUpSync(cwd);
+        this.cwd=path.dirname(up.path);
+        this.targetPath=path.join(this.cwd,".target");
     }
 
-    addBinding(binding) {
-        this.bindings.push(binding);
+    generatePlatformioIni(ev) {
+        let port=this.port;
+        let sourceDirs=ev.sourceDirs.map(d=>this.makeRelativeIfFile(d));
+        let includeDirs=ev.includeDirs;
+
+        return unindent(`
+            [env:peac]
+            platform = espressif32
+            board = esp32-c3-devkitm-1
+            framework = arduino
+            build_unflags = -std=gnu++11  # remove the default
+            build_flags = 
+                -DARDUINO_USB_MODE=1
+                -DARDUINO_USB_CDC_ON_BOOT=1 
+                -std=c++17
+                -DJS_STRICT_NAN_BOXING
+                -DJS_NO_REGEXP
+                -DJS_NO_MODULE_LOADER
+                -DJS_NO_OS
+                -DCONFIG_VERSION=\\"embedded\\"
+                -DEMSCRIPTEN
+                ${"\n"+includeDirs.map(d=>`${" ".repeat(16)}-I${d}`).join("\n")}
+            monitor_speed = 115200
+            upload_port=${port}
+            monitor_port=${port}
+            build_src_filter =
+                -<*>
+                ${"\n"+sourceDirs.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
+        `);
     }
 
-    addSourceDir(sourceDir) {
-        this.sourceDirs.push(sourceDir);
+    async createBuildEvent() {
+        let hookChannel=await loadHookChannel({
+            cwd: this.cwd,
+            keyword: "peac-plugin",
+            exportPath: "peac-build-hooks",
+            extraModuleDirs: path.join(__dirname,"../../packages")
+        });
+
+        let ev=await hookChannel.dispatch(new PeacBuildEvent());
+
+        ev.addIncludeDir(peabindGetLibConf("includeDir"));
+        ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
+        ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
+        ev.addSourceDir(path.join(__dirname,"../../src"));
+        ev.addSourceDir(this.targetPath);
+
+        return ev;
     }
 
-    addIncludeDir(includeDir) {
-        this.includeDirs.push(includeDir);
+    loadJsonIfFilename(filenameOrObject) {
+        if (typeof filenameOrObject=="string")
+            filenameOrObject=JSON5.parse(fs.readFileSync(filenameOrObject));
+
+        return filenameOrObject;
+    }
+
+    makeRelativeIfFile(fileOrDir) {
+        if (fs.statSync(fileOrDir).isDirectory())
+            return fileOrDir;
+
+        return path.relative(this.targetPath,fileOrDir);
+    }
+
+    generatePeacMain(ev) {
+        return autoIndent(`
+            extern "C" {
+                ${ev.setupFunctions.map(f=>`void ${f}();`)}
+                ${ev.loopFunctions.map(f=>`void ${f}();`)}
+
+                void peac_setup() {
+                    ${ev.setupFunctions.map(f=>`${f}();`)}
+                }
+
+                void peac_loop() {
+                    ${ev.loopFunctions.map(f=>`${f}();`)}
+                }
+            }
+        `);
+    }
+
+    generateBootContent(ev) {
+        let content=`
+            ${ev.bootContent}
+            ${ev.bootFiles.map(f=>fs.readFileSync(f,"utf8")).join("\n")}
+        `;
+
+        return `const char boot_js[]="${escapeCString(content)}";`;
     }
 }
 
 export async function peacFlash({cwd, port}) {
-    let up=await readPackageUp(cwd);
+    let flasher=new PeacFlasher({cwd, port});
 
-    cwd=path.dirname(up.path);
-    let targetPath=path.join(cwd,".target");
-
-    let hookChannel=await loadHookChannel({
-        cwd,
-        keyword: "peac-plugin",
-        exportPath: "peac-build-hooks",
-        extraModuleDirs: path.join(__dirname,"../../packages")
-    });
-
-    let ev=await hookChannel.dispatch(new BuildEvent());
-    fs.mkdirSync(targetPath,{recursive: true});
-
-    ev.addIncludeDir(peabindGetLibConf("includeDir"));
-    //ev.addSourceDir(peabindGetLibConf("sourceDir"));
-
-    ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
-    ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
-    ev.addSourceDir(path.join(__dirname,"../../src"));
-    ev.addSourceDir(targetPath);
-
-    let bindings=ev.bindings.map(b=>{
-        if (typeof b=="string")
-            b=fs.readFileSync(b);
-
-        return b;
-    });
+    let ev=await flasher.createBuildEvent();
+    fs.mkdirSync(flasher.targetPath,{recursive: true});
 
     await peabind({
-        idl: peabindMerge(bindings),
+        idl: peabindMerge(ev.bindings.map(b=>flasher.loadJsonIfFilename(b))),
         target: "quickjs",
-        output: path.join(targetPath,"peac_bindings.cpp"),
+        output: path.join(flasher.targetPath,"peac_bindings.cpp"),
         prefix: "peac_bindings_"
     });
 
-    let boot=`const char boot_js[]="${escapeCString(ev.bootContent)}";`;
-    fs.writeFileSync(path.join(targetPath,"boot_js.c"),boot);
+    let boot=flasher.generateBootContent(ev);
+    fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);
 
-    let relativeSourceDirs=ev.sourceDirs.map(d=>{
-        if (fs.statSync(d).isDirectory())
-            return d;
+    let iniSource=flasher.generatePlatformioIni(ev);
+    fs.writeFileSync(path.join(flasher.targetPath,"platformio.ini"),iniSource);
 
-        return path.relative(targetPath,d);
-    });
+    let peacMainSource=flasher.generatePeacMain(ev);
+    fs.writeFileSync(path.join(flasher.targetPath,"peac_main.cpp"),peacMainSource);
 
-    let iniSource=generatePlatformioIni({
-        port,
-        sourceDirs: relativeSourceDirs,
-        includeDirs: ev.includeDirs
-    });
-    fs.writeFileSync(path.join(targetPath,"platformio.ini"),iniSource);
-
-    await runCommand("pio",["run","--target","upload"],{cwd: targetPath});
+    await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
 }

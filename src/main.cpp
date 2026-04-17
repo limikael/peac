@@ -2,6 +2,8 @@
 #include "QuickjsEngine.h"
 
 extern const char boot_js[];
+extern "C" void peac_setup();
+extern "C" void peac_loop();
 
 QuickjsEngine engine(boot_js);
 
@@ -11,11 +13,14 @@ void scheduleRestart() {
 
 void setup() {
 	engine.begin();
-	pinMode(8,OUTPUT);
+	peac_setup();
+	//pinMode(8,OUTPUT);
 }
 
 void loop() {
 	engine.loop();
-	digitalWrite(8,!digitalRead(8));	
-	delay(250);
+	peac_loop();
+
+	/*digitalWrite(8,!digitalRead(8));	
+	delay(250);*/
 }
