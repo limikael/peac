@@ -81,7 +81,7 @@ export async function peacFlash({cwd, port}) {
     fs.mkdirSync(targetPath,{recursive: true});
 
     ev.addIncludeDir(peabindGetLibConf("includeDir"));
-    ev.addSourceDir(peabindGetLibConf("sourceDir"));
+    //ev.addSourceDir(peabindGetLibConf("sourceDir"));
 
     ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
     ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
@@ -98,9 +98,17 @@ export async function peacFlash({cwd, port}) {
     let boot=`const char boot_js[]="${escapeCString(ev.bootContent)}";`;
     fs.writeFileSync(path.join(targetPath,"boot_js.c"),boot);
 
+    let relativeSourceDirs=ev.sourceDirs.map(d=>{
+        if (fs.statSync(d).isDirectory())
+            return d;
+
+        return path.relative(targetPath,d);
+    });
+
     let iniSource=generatePlatformioIni({
         port,
-        sourceDirs: ev.sourceDirs,
+//        sourceDirs: ev.sourceDirs,
+        sourceDirs: relativeSourceDirs,
         includeDirs: ev.includeDirs
     });
     fs.writeFileSync(path.join(targetPath,"platformio.ini"),iniSource);
