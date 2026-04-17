@@ -2,6 +2,7 @@
 import {Command, program} from "commander";
 import {withMergedOptions} from "../utils/commander-util.js";
 import {peacFlash} from "./peac-flash.js";
+import {peacMonitor} from "./peac-commands.js";
 
 program
     .name('peac')
@@ -12,5 +13,10 @@ program
     .command('flash')
     .description("Compile and flash firmware.")
     .action(withMergedOptions(peacFlash));
+
+program
+    .command('monitor')
+    .description("Open monitor.")
+    .action(withMergedOptions(peacMonitor));
 
 await program.parseAsync(process.argv);

@@ -1,3 +1,5 @@
+#include "SoftTimer.h"
+
 extern "C" {
 #include "quickjs.h"
 }
@@ -11,6 +13,8 @@ public:
 	void scheduleRestart();
 
 private:
+	std::string errorMessage;
+	SoftTimer warningTimer;
 	JSRuntime *rt=nullptr;
 	JSContext *ctx=nullptr;
 	bool restartScheduled=false;
