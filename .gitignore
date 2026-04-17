@@ -1,0 +1,7 @@
+node_modules
+.target
+ext
+*.cpp.o
+*.cpp.d
+pnpm-lock.yaml
+pnpm-workspace.yaml

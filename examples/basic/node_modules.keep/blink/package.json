@@ -1,0 +1,6 @@
+{
+	"keywords": ["peac-plugin"],
+	"exports": {
+		"./peac-build-hooks": "./build.js"
+	}
+}

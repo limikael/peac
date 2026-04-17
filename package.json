@@ -1,0 +1,23 @@
+{
+  "name": "peac",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "ext": "./js/tools/ext.js"
+  },
+  "bin": {
+    "peac": "./js/tools/peac-cli.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.2",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "hook-channel": "^1.0.0",
+    "peabind": "link:../peabind",
+    "read-package-up": "^12.0.0"
+  }
+}

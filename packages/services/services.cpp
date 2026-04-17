@@ -1,0 +1,3 @@
+void serialWrite(int v) {
+	
+}

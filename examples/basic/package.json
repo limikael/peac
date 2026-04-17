@@ -1,0 +1,16 @@
+{
+  "name": "basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "flash": "rm -rf node_modules && cp -r node_modules.keep node_modules && peac flash --port=/dev/ttyESP-58:8C:81:AA:02:94"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.2",
+  "dependencies": {
+    "blink": "**dummy**"
+  }
+}
