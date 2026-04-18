@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "runtime.h"
+#include "Timer.h"
 
 void digitalToggle(int pin) {
 	pinMode(8,OUTPUT);
@@ -11,7 +12,10 @@ void msleep(int millis) {
 }
 
 void runtime_start() {
+	//Timer::clearTimers();
+
 	pinMode(8,OUTPUT);
+
 
 	/*for (int i=0; i<10; i++) {
 		digitalToggle(8);
@@ -20,7 +24,7 @@ void runtime_start() {
 }
 
 void runtime_stop() {
-
+	//Timer::clearTimers();
 }
 
 void runtime_setup() {
@@ -33,5 +37,5 @@ void runtime_setup() {
 }
 
 void runtime_loop() {
-//	delay(100);
+	Timer::loop();
 }

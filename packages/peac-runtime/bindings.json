@@ -1,6 +1,15 @@
 {
-	"include": "runtime.h",
+	"include": ["runtime.h","Timer.h"],
+	"classes": {
+		"Timer": {
+			"events": {
+				"timer": {}
+			}
+		}
+	},
 	"functions": {
+		"createTimeout": {"args": ["int"], "return": "Timer"},
+		"createInterval": {"args": ["int"], "return": "Timer"},
 		"digitalToggle": {"args": ["int"]},
 		"msleep": {"args": ["int"]}
 	}
