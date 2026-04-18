@@ -17,13 +17,15 @@ static std::vector<uint8_t> stringToVec(std::string s) {
 class FileHandle {
 public:
 	void write(std::vector<uint8_t> data_) {
-		/*Serial.printf("this=%p, size=%d capacity=%d\n",
-		    this,
-		    writeBuffer.size(),
-		    writeBuffer.capacity()
-		);*/
+		if (buffered) {
+			writeBuffer.insert(writeBuffer.end(), data_.begin(), data_.end());
+		}
 
-		writeBuffer.insert(writeBuffer.end(), data_.begin(), data_.end());
+		else {
+			auto otherShared=other.lock();
+			otherShared->data.emit(data_);
+			writeBuffer.clear();
+		}
 	}
 
 	void write(std::string s) {
@@ -56,7 +58,12 @@ public:
 		return closed;
 	}
 
+	void setBuffered(bool buffered_) {
+		buffered=buffered_;
+	}
+
 private:
+	bool buffered=true;
 	bool closed=false;
 	std::weak_ptr<FileHandle> other;
 	std::vector<uint8_t> writeBuffer;
@@ -67,6 +74,8 @@ public:
 	FileHandlePair() {
 		first=std::make_shared<FileHandle>();
 		second=std::make_shared<FileHandle>();
+		first->setBuffered(false);
+		second->setBuffered(true);
 		first->setOther(second);
 		second->setOther(first);
 	}

@@ -3,6 +3,7 @@ import path from "path";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
+build.priority=5;
 export function build(ev) {
 	ev.addBinding(path.join(__dirname,"bindings.json"));
 	ev.addSourceDir(path.join(__dirname,"src"));

@@ -12,7 +12,6 @@ function setTimeout(fn, ms) {
 
 globalThis.fs=getFsInstance();
 
-
 let devConsole=fs.open("/dev/console","doesn't matter");
 console={};
 console.log=s=>{
@@ -29,7 +28,7 @@ console.log=s=>{
     	devConsole.write(bytes);
 }
 
-setInterval(()=>{
+/*setInterval(()=>{
 	digitalToggle(8);
 	console.log("hello world");
-},1000);
+},1000);*/
