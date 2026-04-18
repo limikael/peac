@@ -5,3 +5,4 @@ ext
 *.cpp.d
 pnpm-lock.yaml
 pnpm-workspace.yaml
+bin

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "ext": "./js/tools/ext.js"
+    "ext": "./js/tools/ext.js",
+    "test:c": "g++ -obin/testmain test/*.cpp -Isrc -I/home/micke/Repo/peabind/include && ./bin/testmain"
   },
   "bin": {
     "peac": "./js/tools/peac-cli.js"
