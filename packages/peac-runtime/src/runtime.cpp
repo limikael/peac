@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include "runtime.h"
 #include "Timer.h"
+#include "Fs.h"
+#include "SoftTimer.h"
+#include <cassert>
 
 void digitalToggle(int pin) {
 	pinMode(8,OUTPUT);
@@ -11,11 +14,17 @@ void msleep(int millis) {
 	delay(millis);
 }
 
+//SoftTimer softTimer(1000);
+
+//std::shared_ptr<FileHandle>devConsole;
+
 void runtime_start() {
 	//Timer::clearTimers();
 
 	pinMode(8,OUTPUT);
 
+	/*devConsole=Fs::getInstance()->open("/dev/console","w");
+	assert(devConsole!=nullptr);*/
 
 	/*for (int i=0; i<10; i++) {
 		digitalToggle(8);
@@ -28,14 +37,28 @@ void runtime_stop() {
 }
 
 void runtime_setup() {
+	//Serial.printf("********** runtime setup.....\n");
+
 	pinMode(8,OUTPUT);
 
-	/*for (int i=0; i<10; i++) {
-		digitalToggle(8);
-		delay(1000);
-	}*/
+	Fs::getInstance()->openRequest.on([](std::shared_ptr<OpenEvent> ev) {
+		if (ev->getPathname()!="/dev/console")
+			return;
+
+		auto f=ev->accept();
+		if (!f)
+			return;
+
+		f->data.on([](std::vector<uint8_t> data) {
+			Serial.write(data.data(),data.size());
+			Serial.flush();
+		});
+	});
 }
 
 void runtime_loop() {
+	/*if (softTimer.tick()) {
+		Serial.printf("ticking here...\n");
+	}*/
 	Timer::loop();
 }

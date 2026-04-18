@@ -1,6 +1,7 @@
 #include "QuickjsEngine.h"
 #include "peac_bindings.h"
 #include "jsval-util.h"
+#include "Fs.h"
 
 extern "C" void peac_notify_start();
 extern "C" void peac_notify_stop();
@@ -27,6 +28,8 @@ void QuickjsEngine::begin() {
 
 void QuickjsEngine::close() {
 	assert(ctx!=NULL);
+	Fs::getInstance()->close();
+	assert(Fs::getInstance()->getNumOpenFiles()==0);
 	peac_notify_stop();
 	peac_bindings_exit();
 	JSRuntime *rt=JS_GetRuntime(ctx);
@@ -36,6 +39,8 @@ void QuickjsEngine::close() {
 }
 
 void QuickjsEngine::loop() {
+	Fs::getInstance()->tick();
+
 	if (warningTimer.tick() && errorMessage!="") {
 		Serial.printf("%s\n",errorMessage.c_str());
 	}

@@ -5,9 +5,24 @@
 #include <string>
 #include <algorithm>
 
+#ifdef ARDUINO
+#include <Arduino.h>
+#endif
+
+static std::vector<uint8_t> stringToVec(std::string s) {
+	std::vector<unsigned char> v(s.begin(), s.end());
+	return v;
+}
+
 class FileHandle {
 public:
 	void write(std::vector<uint8_t> data_) {
+		/*Serial.printf("this=%p, size=%d capacity=%d\n",
+		    this,
+		    writeBuffer.size(),
+		    writeBuffer.capacity()
+		);*/
+
 		writeBuffer.insert(writeBuffer.end(), data_.begin(), data_.end());
 	}
 
@@ -164,6 +179,10 @@ public:
 		tick();
 	}
 
+	static std::shared_ptr<Fs> getInstance();
+
 private:
 	std::vector<std::shared_ptr<FileHandlePair>> pairs;
 };
+
+std::shared_ptr<Fs> getFsInstance();

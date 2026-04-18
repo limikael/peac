@@ -10,6 +10,24 @@ function setTimeout(fn, ms) {
 	//return t.getId();
 }
 
+globalThis.fs=getFsInstance();
+
+function encodeAscii(str) {
+    const arr = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+        arr[i] = str.charCodeAt(i);
+    }
+    return arr;
+}
+
+devConsole=fs.open("/dev/console","doesn't matter");
+console={};
+console.log=s=>{
+	let bytes=encodeAscii(s+"\n");
+	devConsole.write(bytes);
+}
+
 setInterval(()=>{
 	digitalToggle(8);
-},250);
+	console.log("hello world");
+},1000);

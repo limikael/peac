@@ -1,9 +1,24 @@
 {
-	"include": ["runtime.h","Timer.h"],
+	"include": ["runtime.h","Timer.h","Fs.h","Arduino.h"],
 	"classes": {
 		"Timer": {
 			"events": {
 				"timer": {}
+			}
+		},
+		"Fs": {
+			"methods": {
+				"open": {"return": "FileHandle","args":["string","string"]}
+			}
+		},
+		"FileHandle": {
+			"methods": {
+				"close": {},
+				"write": {"args": ["buffer"]}
+			},
+			"events": {
+				"data": {"args": ["buffer"]},
+				"closeEvent": {}
 			}
 		}
 	},
@@ -11,7 +26,8 @@
 		"createTimeout": {"args": ["int"], "return": "Timer"},
 		"createInterval": {"args": ["int"], "return": "Timer"},
 		"digitalToggle": {"args": ["int"]},
-		"msleep": {"args": ["int"]}
+		"msleep": {"args": ["int"]},
+		"getFsInstance": {"return": "Fs"}
 	}
 }
 

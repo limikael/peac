@@ -13,8 +13,9 @@ void scheduleRestart() {
 
 void setup() {
     Serial.begin(112500);
-	engine.begin();
+    Serial.printf("************** start ********** \n");
 	peac_notify_setup();
+	engine.begin();
 	//pinMode(8,OUTPUT);
 }
 

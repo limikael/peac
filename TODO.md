@@ -1,6 +1,6 @@
 todo:
 - timers (setTimeout and setInterval works, but not remove)
-- VFS
+x VFS
 - console
 - RPC
 - FS
