@@ -9,5 +9,7 @@ export function build(ev) {
 	ev.addIncludeDir(path.join(__dirname,"src"));
 	ev.addSetupFunction("runtime_setup");
 	ev.addLoopFunction("runtime_loop");
+	ev.addStartFunction("runtime_start");
+	ev.addStopFunction("runtime_stop");
 	ev.addBootFile(path.join(__dirname,"boot.js"));
 }

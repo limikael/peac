@@ -7,9 +7,11 @@ export default class BuildEvent extends HookEvent {
         this.bootContent="";
         this.sourceDirs=[];
         this.includeDirs=[];
+        this.bootFiles=[];
         this.setupFunctions=[];
         this.loopFunctions=[];
-        this.bootFiles=[];
+        this.startFunctions=[];
+        this.stopFunctions=[];
     }
 
     addBootFile(bootFile) {
@@ -34,5 +36,13 @@ export default class BuildEvent extends HookEvent {
 
     addLoopFunction(f) {
         this.loopFunctions.push(f);
+    }
+
+    addStartFunction(f) {
+        this.startFunctions.push(f);
+    }
+
+    addStopFunction(f) {
+        this.stopFunctions.push(f);
     }
 }

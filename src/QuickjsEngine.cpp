@@ -2,20 +2,22 @@
 #include "peac_bindings.h"
 #include "jsval-util.h"
 
+extern "C" void peac_notify_start();
+extern "C" void peac_notify_stop();
+
 QuickjsEngine::QuickjsEngine(const char *boot_)
 		:warningTimer(1000) {
 	boot=boot_;
 }
 
 void QuickjsEngine::begin() {
-	if (rt || ctx)
-		return; // should throw
-
-    rt=JS_NewRuntime();
+	assert(ctx==NULL);
+	JSRuntime *rt=JS_NewRuntime();
     ctx=JS_NewContext(rt);
 	errorMessage="";
 
 	peac_bindings_init(ctx);
+	peac_notify_start();
 	JSVAL res=jsvalEval(boot);
 	if (jsvalHasException())
 		errorMessage=jsvalCatchExceptionStdString();
@@ -24,17 +26,13 @@ void QuickjsEngine::begin() {
 }
 
 void QuickjsEngine::close() {
-	if (!rt || !ctx)
-		return; // should throw
-
+	assert(ctx!=NULL);
+	peac_notify_stop();
 	peac_bindings_exit();
-
+	JSRuntime *rt=JS_GetRuntime(ctx);
     JS_FreeContext(ctx);
-    ctx=nullptr;
-
-    JS_RunGC(rt);
     JS_FreeRuntime(rt);
-	rt=nullptr;
+	ctx=nullptr;
 }
 
 void QuickjsEngine::loop() {

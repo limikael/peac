@@ -96,13 +96,23 @@ class PeacFlasher {
             extern "C" {
                 ${ev.setupFunctions.map(f=>`void ${f}();`)}
                 ${ev.loopFunctions.map(f=>`void ${f}();`)}
+                ${ev.startFunctions.map(f=>`void ${f}();`)}
+                ${ev.stopFunctions.map(f=>`void ${f}();`)}
 
-                void peac_setup() {
+                void peac_notify_setup() {
                     ${ev.setupFunctions.map(f=>`${f}();`)}
                 }
 
-                void peac_loop() {
+                void peac_notify_loop() {
                     ${ev.loopFunctions.map(f=>`${f}();`)}
+                }
+
+                void peac_notify_start() {
+                    ${ev.startFunctions.map(f=>`${f}();`)}
+                }
+
+                void peac_notify_stop() {
+                    ${ev.stopFunctions.map(f=>`${f}();`)}
                 }
             }
         `);
