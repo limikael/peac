@@ -1,5 +1,5 @@
-import {readPackageUpSync} from "read-package-up";
-import {dirnameFromImportMeta, runCommand} from "../utils/node-util.js";
+import {dirnameFromImportMeta, runCommand, packageDirname} from "../utils/node-util.js";
+import {DeclaredError} from "../utils/js-util.js";
 import path from "path";
 import fs from "fs";
 import {loadHookChannel, HookEvent} from "hook-channel";
@@ -12,10 +12,11 @@ let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeacFlasher {
     constructor({cwd, port}) {
-        this.port=port;
+        if (!port)
+            throw new DeclaredError("No port specified.");
 
-        let up=readPackageUpSync(cwd);
-        this.cwd=path.dirname(up.path);
+        this.port=port;
+        this.cwd=packageDirname(cwd);
         this.targetPath=path.join(this.cwd,".target");
     }
 

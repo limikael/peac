@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "flash": "peac flash --port=/dev/ttyESP-58:8C:81:AA:02:94"
+    "flash": "peac flash"
   },
   "keywords": [],
   "author": "",

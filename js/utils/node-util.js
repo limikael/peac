@@ -1,5 +1,8 @@
 import {fileURLToPath} from 'url';
 import {spawn} from "child_process";
+import {packageUpSync} from "package-up";
+import {DeclaredError} from "./js-util.js";
+import path from "path";
 
 export function dirnameFromImportMeta(meta) {
     return fileURLToPath(new URL('.', meta.url));
@@ -38,4 +41,12 @@ export function runCommand(cmd, args = [], options = {}) {
             }
         });
     });
+}
+
+export function packageDirname(cwd) {
+    let packageFilename=packageUpSync({cwd});
+    if (!packageFilename)
+        throw new DeclaredError("Not inside a project.");
+
+    return path.dirname(packageFilename);
 }

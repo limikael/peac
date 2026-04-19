@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-import {Command, program} from "commander";
+import {Command, Option, program} from "commander";
 import {withMergedOptions} from "../utils/commander-util.js";
-import {peacFlash} from "./peac-flash.js";
-import {peacMonitor} from "./peac-commands.js";
+import {peacFlash, peacMonitor, peacInfo} from "./peac-commands.js";
+import {loadProjectEnv} from "../utils/env-util.js";
+
+loadProjectEnv();
 
 program
     .name('peac')
     .description('Plugin and JS based MCU platform.')
-    .option("-p, --port <port>","How to reach the MCU.")
+    .option("--cwd <cwd>","Project dir.")
+    .addOption(new Option("-p, --port <port>","How to reach the MCU.").env("PEAC_PORT"))
 
 program
     .command('flash')
@@ -19,4 +22,19 @@ program
     .description("Open monitor.")
     .action(withMergedOptions(peacMonitor));
 
-await program.parseAsync(process.argv);
+/*program
+    .command('info')
+    .description("Show runtime info.")
+    .action(withMergedOptions(peacInfo));*/
+
+try {
+    await program.parseAsync(process.argv);
+}
+
+catch (e) {
+    if (!e.declared)
+        throw e;
+
+    console.log(e.message);
+    process.exit(1);
+}
