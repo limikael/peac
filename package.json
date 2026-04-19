@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "ext": "./js/tools/ext.js",
+    "test": "pnpm test:js && pnpm test:c",
+    "test:js": "jasmine",
     "test:c": "g++ -obin/testmain test/*.cpp -Isrc -I/home/micke/Repo/peabind/include && ./bin/testmain"
   },
   "bin": {
@@ -18,10 +20,11 @@
   "dependencies": {
     "commander": "^14.0.3",
     "hook-channel": "^1.0.0",
+    "json5": "^2.2.3",
     "peabind": "link:../peabind",
     "read-package-up": "^12.0.0"
   },
   "devDependencies": {
-    "json5": "^2.2.3"
+    "jasmine": "^6.2.0"
   }
 }

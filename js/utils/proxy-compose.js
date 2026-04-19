@@ -1,4 +1,4 @@
-function proxyCompose(...layers) {
+export function proxyCompose(...layers) {
 	return new Proxy({}, {
 		get(_, prop, receiver) {
 			// handle symbols properly (e.g. inspect, iterator)
@@ -28,7 +28,7 @@ function proxyCompose(...layers) {
 	});
 }
 
-function proxyComposeFb(...args) {
+export function proxyComposeFb(...args) {
 	if (args.length === 0) {
 		throw new Error("proxyComposeFb requires at least a fallback function");
 	}
