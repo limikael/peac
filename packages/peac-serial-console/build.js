@@ -9,7 +9,7 @@ export function build(ev) {
 	ev.addIncludeDir(path.join(__dirname,"."));
 	ev.addSetupFunction("serial_console_setup");
 	ev.addLoopFunction("serial_console_loop");
-	/*ev.addStartFunction("runtime_start");
-	ev.addStopFunction("runtime_stop");
-	ev.addBootFile(path.join(__dirname,"boot.js"));*/
+	ev.addStartFunction("serial_console_start");
+	ev.addStopFunction("serial_console_stop");
+	//ev.addBootFile(path.join(__dirname,"boot.js"));
 }

@@ -2,6 +2,7 @@
 
 extern "C" {
 #include "quickjs.h"
+void scheduleRestart();
 }
 
 class QuickjsEngine {

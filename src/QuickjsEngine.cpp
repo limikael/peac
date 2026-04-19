@@ -12,6 +12,9 @@ QuickjsEngine::QuickjsEngine(const char *boot_)
 }
 
 void QuickjsEngine::begin() {
+	//pinMode(4,INPUT_PULLUP);
+	//Serial.printf("***** starting...\n");
+
 	assert(ctx==NULL);
 	JSRuntime *rt=JS_NewRuntime();
     ctx=JS_NewContext(rt);
@@ -34,6 +37,8 @@ void QuickjsEngine::close() {
 	peac_bindings_exit();
 	JSRuntime *rt=JS_GetRuntime(ctx);
     JS_FreeContext(ctx);
+    JS_RunGC(rt);
+    assert(peac_bindings_get_num_objects()==0);
     JS_FreeRuntime(rt);
 	ctx=nullptr;
 }
@@ -41,8 +46,13 @@ void QuickjsEngine::close() {
 void QuickjsEngine::loop() {
 	Fs::getInstance()->tick();
 
-	if (warningTimer.tick() && errorMessage!="") {
-		Serial.printf("%s\n",errorMessage.c_str());
+	if (warningTimer.tick()) {
+		//Serial.printf("pin 4: %d\n",digitalRead(4));
+		/*if (!digitalRead(4))
+			scheduleRestart();*/
+
+		if (errorMessage!="")
+			Serial.printf("%s\n",errorMessage.c_str());
 	}
 
 	if (restartScheduled) {

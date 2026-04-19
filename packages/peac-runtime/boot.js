@@ -35,8 +35,3 @@ console.log=s=>{
     if (devConsole)
     	devConsole.write(bytes);
 }
-
-/*setInterval(()=>{
-	digitalToggle(8);
-	console.log("hello world");
-},1000);*/

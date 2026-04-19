@@ -16,6 +16,9 @@ static std::vector<uint8_t> stringToVec(std::string s) {
 
 class FileHandle {
 public:
+	~FileHandle() {
+		//Serial.printf("FileHandle destructor...\n");
+	}
 	void write(std::vector<uint8_t> data_) {
 		if (buffered) {
 			writeBuffer.insert(writeBuffer.end(), data_.begin(), data_.end());
