@@ -4,6 +4,7 @@
 #include "peabind.h"
 #include <string>
 #include <algorithm>
+#include <cassert>
 
 #ifdef ARDUINO
 #include <Arduino.h>
@@ -19,33 +20,28 @@ public:
 	~FileHandle() {
 		//Serial.printf("FileHandle destructor...\n");
 	}
-	void write(std::vector<uint8_t> data_) {
-		if (buffered) {
-			writeBuffer.insert(writeBuffer.end(), data_.begin(), data_.end());
-		}
-
-		else {
-			auto otherShared=other.lock();
-			otherShared->data.emit(data_);
-			writeBuffer.clear();
-		}
-	}
 
 	void write(std::string s) {
 		std::vector<unsigned char> v(s.begin(), s.end());
 		write(v);
 	}
 
-	void setOther(std::weak_ptr<FileHandle> other_) { other=other_; }
+	void write(std::vector<uint8_t> data) {
+		assert(!isClosed());
+		auto otherShared=other.lock();
+		assert(otherShared!=nullptr);
+		assert(!otherShared->isClosed());
+		otherShared->handleIncoming(data);
+	}
 
-	Dispatcher<std::vector<uint8_t>> data;
-	Dispatcher<> closeEvent;
+	void handleIncoming(std::vector<uint8_t> data) {
+		readBuffer.insert(readBuffer.end(), data.begin(), data.end());
+	}
 
 	void tick() {
-		if (writeBuffer.size()) {
-			auto otherShared=other.lock();
-			otherShared->data.emit(writeBuffer);
-			writeBuffer.clear();
+		if (readBuffer.size()) {
+			dataEvent.emit(readBuffer);
+			readBuffer.clear();
 		}
 	}
 
@@ -61,15 +57,15 @@ public:
 		return closed;
 	}
 
-	void setBuffered(bool buffered_) {
-		buffered=buffered_;
-	}
+	void setOther(std::weak_ptr<FileHandle> other_) { other=other_; }
+
+	Dispatcher<std::vector<uint8_t>> dataEvent;
+	Dispatcher<> closeEvent;
 
 private:
-	bool buffered=true;
 	bool closed=false;
 	std::weak_ptr<FileHandle> other;
-	std::vector<uint8_t> writeBuffer;
+	std::vector<uint8_t> readBuffer;
 };
 
 class FileHandlePair {
@@ -77,8 +73,6 @@ public:
 	FileHandlePair() {
 		first=std::make_shared<FileHandle>();
 		second=std::make_shared<FileHandle>();
-		first->setBuffered(false);
-		second->setBuffered(true);
 		first->setOther(second);
 		second->setOther(first);
 	}
@@ -89,6 +83,11 @@ public:
 	void tick() {
 		first->tick();
 		second->tick();
+	}
+
+	void close() {
+		first->close();
+		second->close();
 	}
 
 	bool isClosed() {
@@ -148,8 +147,7 @@ public:
 		}
 
 		else {
-			fp->getFirst()->close();
-			fp->getSecond()->close();
+			fp->close();
 			return nullptr;
 		}
 	}
@@ -183,10 +181,8 @@ public:
 	void close() {
 		tick();
 
-		for (auto fp: pairs) {
-			fp->getFirst()->close();
-			fp->getSecond()->close();
-		}
+		for (auto fp: pairs)
+			fp->close();
 
 		tick();
 	}

@@ -14,7 +14,7 @@ void test_fs_pair() {
 	auto p=fs.createFileHandlePair();
 	std::vector<uint8_t>received;
 
-	p->getSecond()->data.on([&received](std::vector<uint8_t> data){
+	p->getSecond()->dataEvent.on([&received](std::vector<uint8_t> data){
 		received=data;
 	});
 	p->getFirst()->write("hello");
@@ -35,7 +35,7 @@ void test_fs_accept() {
 
 	fs.openRequest.on([&received](std::shared_ptr<OpenEvent> ev){
 		auto myh=ev->accept();
-		myh->data.on([&received](std::vector<uint8_t> data) {
+		myh->dataEvent.on([&received](std::vector<uint8_t> data) {
 			received=std::string(data.begin(),data.end());
 			//printf("got data...\n");
 		});
@@ -71,8 +71,8 @@ void test_fs_accept_read() {
 	assert(fs.open("/somehing","r")==nullptr);
 
 	std::string s1,s2;
-	f1->data.on([&s1](std::vector<uint8_t> v) { s1=vecToString(v); });
-	f2->data.on([&s2](std::vector<uint8_t> v) { s2=vecToString(v); });
+	f1->dataEvent.on([&s1](std::vector<uint8_t> v) { s1=vecToString(v); });
+	f2->dataEvent.on([&s2](std::vector<uint8_t> v) { s2=vecToString(v); });
 
 	fs.tick();
 

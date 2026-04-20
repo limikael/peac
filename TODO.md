@@ -1,8 +1,8 @@
 todo:
-- digitalWrite proper function name
-- gpio
 - FS
 - deploy
+x digitalWrite proper function name
+x gpio
 x init command
 x fix wasm tests
 x RPC

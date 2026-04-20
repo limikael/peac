@@ -17,7 +17,7 @@ void serial_console_setup() {
 
 		openConsoles.push_back(f);
 
-		f->data.on([](std::vector<uint8_t> data) {
+		f->dataEvent.on([](std::vector<uint8_t> data) {
 			Serial.write(data.data(),data.size());
 			Serial.flush();
 		});

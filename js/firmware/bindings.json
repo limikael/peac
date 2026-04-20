@@ -12,8 +12,8 @@
 				"write": {"args": ["buffer"]}
 			},
 			"events": {
-				"data": {"args": ["buffer"]},
-				"closeEvent": {}
+				"data": {"args": ["buffer"], "dispatcher": "dataEvent"},
+				"close": {"dispatcher": "closeEvent"}
 			}
 		},
 		"StringArray": {
