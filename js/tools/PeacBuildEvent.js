@@ -5,7 +5,7 @@ export default class BuildEvent extends HookEvent {
         super("build");
         this.bindings=[];
         this.bootContent="";
-        this.sourceDirs=[];
+        this.sources=[];
         this.includeDirs=[];
         this.bootFiles=[];
         this.setupFunctions=[];
@@ -22,8 +22,8 @@ export default class BuildEvent extends HookEvent {
         this.bindings.push(binding);
     }
 
-    addSourceDir(sourceDir) {
-        this.sourceDirs.push(sourceDir);
+    addSource(source) {
+        this.sources.push(source);
     }
 
     addIncludeDir(includeDir) {

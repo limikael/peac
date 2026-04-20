@@ -22,8 +22,29 @@ class PeacFlasher {
 
     generatePlatformioIni(ev) {
         let port=this.port;
-        let sourceDirs=ev.sourceDirs.map(d=>this.makeRelativeIfFile(d));
         let includeDirs=ev.includeDirs;
+
+        fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
+
+        let sources=[];
+        for (let source of ev.sources) {
+            let stats=fs.statSync(source);
+
+            if (stats.isFile()) {
+                let name=path.basename(source);
+                let linkToName=path.join(this.targetPath,"src-ext",name);
+                if (!fs.existsSync(linkToName))
+                    fs.symlinkSync(source,linkToName);
+
+                sources.push(linkToName);
+            }
+
+            else {
+                sources.push(source);
+            }
+        }
+
+        sources.push(path.join(this.targetPath,"src-ext"));
 
         return unindent(`
             [env:peac]
@@ -41,13 +62,14 @@ class PeacFlasher {
                 -DJS_NO_OS
                 -DCONFIG_VERSION=\\"embedded\\"
                 -DEMSCRIPTEN
+                -DJSVAL_TARGET_QUICKJS
                 ${"\n"+includeDirs.map(d=>`${" ".repeat(16)}-I${d}`).join("\n")}
             monitor_speed = 115200
             upload_port=${port}
             monitor_port=${port}
             build_src_filter =
                 -<*>
-                ${"\n"+sourceDirs.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
+                ${"\n"+sources.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
         `+"\n");
     }
 
@@ -66,14 +88,12 @@ class PeacFlasher {
         ev.addIncludeDir(peabindGetLibConf("includeDir"));
         ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addIncludeDir(this.targetPath);
-        ev.addSourceDir(path.join(__dirname,"../../vendor/quickjs"));
-        ev.addSourceDir(path.join(__dirname,"../../src"));
-        ev.addSourceDir(this.targetPath);
+        ev.addSource(path.join(__dirname,"../../vendor/quickjs"));
+        ev.addSource(path.join(__dirname,"../../src"));
+        ev.addSource(this.targetPath);
 
-        fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
-        if (!fs.existsSync(path.join(this.targetPath,"src-ext/pb.cpp")))
-            fs.symlinkSync(peabindGetLibConf("source"),path.join(this.targetPath,"src-ext/pb.cpp"));
-        ev.addSourceDir(path.join(this.targetPath,"src-ext"));
+        for (let source of peabindGetLibConf("sources",{target: "quickjs"}))
+            ev.addSource(source);
 
         return ev;
     }
