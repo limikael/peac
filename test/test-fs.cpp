@@ -66,7 +66,9 @@ void test_fs_accept_read() {
 
 		if (ev->getPathname()=="/f2") {
 			auto f=ev->accept();
-			f->write(stringToVec("hello2"));
+			f->drainEvent.on([f]() {
+				f->write(stringToVec("hello2"));
+			});
 		}
 	});
 
@@ -76,13 +78,15 @@ void test_fs_accept_read() {
 	assert(fs->open("/somehing","r")==nullptr);
 
 	std::string s1,s2;
-	f1->dataEvent.on([&s1](std::vector<uint8_t> v) { s1=vecToString(v); });
-	f2->dataEvent.on([&s2](std::vector<uint8_t> v) { s2=vecToString(v); });
+	f1->dataEvent.on([&s1](std::vector<uint8_t> v) { s1+=vecToString(v); });
+	f2->dataEvent.on([&s2](std::vector<uint8_t> v) { s2+=vecToString(v); });
 
-	fs->tick();
+	for (int i=0; i<10; i++)
+		fs->tick();
 
 	assert(s1=="hello1");
-	assert(s2=="hello2");
+	//printf("%s\n",s2.c_str());
+	assert(s2=="hello2hello2hello2hello2hello2hello2hello2hello2hello2");
 
 	assert(fs->getNumOpenFiles()==2);
 	f1->close();
@@ -90,4 +94,46 @@ void test_fs_accept_read() {
 	fs->tick();
 
 	assert(fs->getNumOpenFiles()==0);
+}
+
+void test_buffered() {
+	printf("- fs can do buffered read\n");
+	auto fs=Fs::createForTesting();
+
+	fs->openRequest.on([](std::shared_ptr<OpenEvent> ev){
+		if (ev->getPathname()=="/f1") {
+			auto f=ev->accept();
+			f->write(stringToVec("hello1"));
+		}
+	});
+
+	auto f1=fs->open("/f1","r");
+	f1->setBuffered(true);
+	f1->dataEvent.on([f1](std::vector<uint8_t> v) {
+		assert(!v.size());
+	});
+
+	fs->tick();
+
+	auto s=vecToString(f1->read());
+	assert(s=="hello1");
+}
+
+void test_buffered_delayed_write() {
+	printf("- fs can do buffered read with delay\n");
+	auto fs=Fs::createForTesting();
+
+	fs->openRequest.on([](std::shared_ptr<OpenEvent> ev){
+		if (ev->getPathname()=="/f1") {
+			auto f=ev->accept();
+			f->drainEvent.on([f]() {
+				f->write(stringToVec("hello1"));
+			});
+		}
+	});
+
+	auto f1=fs->open("/f1","r");
+	f1->setBuffered(true);
+	auto s=vecToString(f1->read());
+	assert(s=="hello1");
 }
