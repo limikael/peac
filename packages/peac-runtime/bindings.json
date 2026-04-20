@@ -13,9 +13,7 @@
 	"functions": {
 		"createTimeout": {"args": ["int"], "return": "Timer"},
 		"createInterval": {"args": ["int"], "return": "Timer"},
-		"clearTimer": {"args": ["int"]},
-		"digitalToggle": {"args": ["int"]},
-		"msleep": {"args": ["int"]},
+		"clearTimer": {"args": ["int"]}
 	}
 }
 
