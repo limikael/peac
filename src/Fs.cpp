@@ -5,45 +5,54 @@ FileHandle::FileHandle() {
 }
 
 void FileHandle::write(std::vector<uint8_t> data) {
-	assert(!isClosed());
+	if (isClosed() || isPeerClosed())
+		return;
+
 	auto otherShared=other.lock();
-	assert(otherShared!=nullptr);
-	assert(!otherShared->isClosed());
-	otherShared->handleIncoming(data);
+	if (!otherShared)
+		return;
+
+	if (sync)
+		otherShared->handleIncomingSync(data);
+
+	else
+		otherShared->handleIncoming(data);
 }
 
 std::vector<uint8_t> FileHandle::read() {
-	assert(buffered);
-	if (!readBuffer.size() && !isClosed()) {
+	assert(sync);
+	if (!readBuffer.size() && !isClosed() && !isPeerClosed()) {
 		auto otherShared=other.lock();
-		otherShared->drainEvent.emit();
+		if (otherShared)
+			otherShared->drainEvent.emit();
 	}
 
 	std::vector<uint8_t> data=readBuffer;
 	readBuffer.clear();
+	if (isPeerClosed() && !readBuffer.size())
+		close();
+
 	return data;
 }
 
 void FileHandle::tick() {
-	if (drainOnTick && !isClosed()) {
+	if (isPeerClosed() && !readBuffer.size())
+		close();
+
+	if (drainOnTick && !isClosed() && !isPeerClosed())
 		drainEvent.emit();
-		drainOnTick=false;
-	}
 
-	if (haveNewData) {
-		haveNewData=false;
-		if (buffered) {
-			std::vector<uint8_t> empty;
-			dataEvent.emit(empty);
-		}
-
-		else {
-			dataEvent.emit(readBuffer);
-			readBuffer.clear();
-			auto otherShared=other.lock();
+	drainOnTick=false;
+	if (/*haveNewData &&*/ readBuffer.size() && !sync) {
+		//haveNewData=false;
+		dataEvent.emit(readBuffer);
+		readBuffer.clear();
+		auto otherShared=other.lock();
+		if (otherShared)
 			otherShared->drainOnTick=true;
-		}
 	}
+
+	//haveNewData=false;
 }
 
 void FileHandle::close() {
@@ -51,24 +60,56 @@ void FileHandle::close() {
 		return;
 
 	closed=true;
-	other.lock()->close();
+	//other.lock()->close();
+	auto otherShared=other.lock();
+	if (otherShared)
+		other.lock()->closeEvent.emit();
+}
+
+bool FileHandle::isPeerSync() {
+	auto otherShared=other.lock();
+	if (!otherShared)
+		return false;
+
+	return otherShared->sync;
+}
+
+bool FileHandle::isPeerClosed() {
+	auto otherShared=other.lock();
+	if (!otherShared)
+		return true;
+
+	return otherShared->isClosed();
+}
+
+void FileHandle::handleIncomingSync(std::vector<uint8_t> data) {
+	readBuffer.insert(readBuffer.end(), data.begin(), data.end());
+	dataEvent.emit(readBuffer);
+	readBuffer.clear();
 }
 
 void FileHandle::handleIncoming(std::vector<uint8_t> data) {
 	readBuffer.insert(readBuffer.end(), data.begin(), data.end());
-	haveNewData=true;
+	//haveNewData=true;
 }
 
-void FileHandle::setBuffered(bool b) {
-	buffered=b;
+void FileHandle::setSync(bool c) {
+	sync=c;
+	if (isPeerClosed())
+		return;
+
 	auto otherShared=other.lock();
-	assert(otherShared);
+	if (otherShared)
+		return;
 
-	if (buffered)
+	if (sync) {
+		assert(!isPeerSync());
 		otherShared->drainOnTick=false;
+	}
 
-	else
+	else {
 		otherShared->drainOnTick=true;
+	}
 }
 
 FileHandlePair::FileHandlePair() {
@@ -132,10 +173,10 @@ void Fs::tick() {
 	        pairs.begin(),
 	        pairs.end(),
 	        [](const std::shared_ptr<FileHandlePair>& p) {
-	        	if (p->isClosed()) {
+	        	/*if (p->isClosed()) {
 					p->getFirst()->closeEvent.emit();
 					p->getSecond()->closeEvent.emit();
-	        	}
+	        	}*/
 	            return p->isClosed();
 	        }
 	    ),

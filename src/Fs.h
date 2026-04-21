@@ -19,17 +19,20 @@ public:
 	void tick();
 	void close();
 	bool isClosed() { return closed; }
+	bool isPeerClosed();
+	bool isPeerSync();
 	void setOther(std::weak_ptr<FileHandle> other_) { other=other_; }
-	void setBuffered(bool b);
+	void setSync(bool b);
 	Dispatcher<std::vector<uint8_t>> dataEvent;
 	Dispatcher<> closeEvent;
 	Dispatcher<> drainEvent;
 
 private:
 	void handleIncoming(std::vector<uint8_t> data);
+	void handleIncomingSync(std::vector<uint8_t> data);
 	bool closed=false;
-	bool buffered=false;
-	bool haveNewData=false;
+	bool sync=false;
+	//bool haveNewData=false;
 	bool drainOnTick=false;
 	std::weak_ptr<FileHandle> other;
 	std::vector<uint8_t> readBuffer;
@@ -42,7 +45,7 @@ public:
 	std::shared_ptr<FileHandle> getSecond() { return second; }
 	void tick();
 	void close();
-	bool isClosed() { return (first->isClosed() || second->isClosed()); }
+	bool isClosed() { return (first->isClosed() && second->isClosed()); }
 
 private:
 	std::shared_ptr<FileHandle> first, second;
