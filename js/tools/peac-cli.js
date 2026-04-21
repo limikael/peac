@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {Command, Option, program} from "commander";
 import {withMergedOptions} from "../utils/commander-util.js";
-import {peacFlash, peacMonitor, peacInfo, peacInit} from "./peac-commands.js";
+import {peacFlash, peacMonitor, peacInfo, peacInit, peacCat} from "./peac-commands.js";
 import {loadProjectEnv} from "../utils/env-util.js";
 
 loadProjectEnv();
@@ -31,6 +31,12 @@ program
     .command("init")
     .description("Create peac project in current dir.")
     .action(withMergedOptions(peacInit));
+
+program
+    .command("cat")
+    .description("Print remote file.")
+    .argument('<file>', 'file to print')
+    .action(withMergedOptions(peacCat));
 
 try {
     await program.parseAsync(process.argv);

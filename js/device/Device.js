@@ -13,13 +13,17 @@ export default class Device {
 
     async readFile(fn) {
         let fid=await this.connection.fileOpen(fn, "r");
+        //console.log("fid: "+fid);
         let content="";
         let s;
 
         do {
-            s=await this.connection.fileRead(fid,64);
+            s=await this.connection.fileReadString(fid); //,64);
+            //console.log(s);
             content+=s;
-        } while (s.length);
+        } while (s!==undefined && s!==null && s.length);
+
+        //console.log("done... closing...");
 
         await this.connection.fileClose(fid);
 
@@ -49,7 +53,7 @@ export default class Device {
 	        let chunks=stringChunkify(content,64);
 	        let fid=await this.connection.fileOpen(fn, "w");
 	        for (let chunk of chunks)
-	            await this.connection.fileWrite(fid,chunk);
+	            await this.connection.fileWriteString(fid,chunk);
 
 	        await this.connection.fileClose(fid);
     	}

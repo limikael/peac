@@ -46,3 +46,11 @@ export async function peacInit({cwd}) {
 
     fs.writeFileSync(path.join(cwd,"package.json"),JSON.stringify(pkg,null,2));
 }
+
+export async function peacCat({cwd, port, args}) {
+    let device=await createDevice({port});
+    //console.log(port);
+    let content=await device.readFile(args[0]);
+    console.log(content);
+    await device.close();
+}

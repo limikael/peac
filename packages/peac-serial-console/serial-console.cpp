@@ -5,8 +5,25 @@
 
 static std::vector<std::shared_ptr<FileHandle>> openConsoles;
 
+std::vector<uint8_t> static stringToVec(std::string s) {
+	std::vector<unsigned char> v(s.begin(), s.end());
+	return v;
+}
+
 void serial_console_setup() {
     Serial.begin(112500);
+	Fs::getInstance()->openRequest.on([](std::shared_ptr<OpenEvent> ev) {
+		if (ev->getPathname()!="/hello")
+			return;
+
+		auto f=ev->accept();
+		if (!f)
+			return;
+
+		f->write(stringToVec("hello"));
+		f->close();
+	});
+
 	Fs::getInstance()->openRequest.on([](std::shared_ptr<OpenEvent> ev) {
 		if (ev->getPathname()!="/dev/console")
 			return;

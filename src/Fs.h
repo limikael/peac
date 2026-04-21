@@ -23,6 +23,7 @@ public:
 	bool isPeerSync();
 	void setOther(std::weak_ptr<FileHandle> other_) { other=other_; }
 	void setSync(bool b);
+	int getId() { return id; }
 	Dispatcher<std::vector<uint8_t>> dataEvent;
 	Dispatcher<> closeEvent;
 	Dispatcher<> drainEvent;
@@ -75,6 +76,7 @@ public:
 	static std::shared_ptr<Fs> getInstance();
 	static std::shared_ptr<Fs> createForTesting();
 	Dispatcher<std::shared_ptr<OpenEvent>> openRequest;
+	std::shared_ptr<FileHandle> getFileHandle(int fid);
 
 private:
 	int nextId=1;

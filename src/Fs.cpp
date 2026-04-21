@@ -199,6 +199,18 @@ std::shared_ptr<Fs> Fs::createForTesting() {
 	return std::shared_ptr<Fs>(new Fs());
 }
 
+std::shared_ptr<FileHandle> Fs::getFileHandle(int fid) {
+	for (auto fp: pairs) {
+		if (fp->getFirst()->getId()==fid)
+			return fp->getFirst();
+
+		if (fp->getSecond()->getId()==fid)
+			return fp->getSecond();
+	}
+
+	return nullptr;
+}
+
 std::shared_ptr<Fs> getFsInstance() {
 	return Fs::getInstance();
 }

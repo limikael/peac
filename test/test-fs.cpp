@@ -2,13 +2,14 @@
 #include <Fs.h>
 #include <cassert>
 #include <deque>
+#include <string>
 
-std::string vecToString(std::vector<uint8_t> vec) {
+std::string static vecToString(std::vector<uint8_t> vec) {
 	std::string s(vec.begin(),vec.end());
 	return s;
 }
 
-std::vector<uint8_t> stringToVec(std::string s) {
+std::vector<uint8_t> static stringToVec(std::string s) {
 	std::vector<unsigned char> v(s.begin(), s.end());
 	return v;
 }

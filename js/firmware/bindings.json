@@ -1,5 +1,5 @@
 {
-	"include": ["Fs.h","Arduino.h","QuickjsEngine.h","InfoRecord.h"],
+	"include": ["Fs.h","Arduino.h","QuickjsEngine.h","InfoRecord.h","fdio.h"],
 	"classes": {
 		"Fs": {
 			"constructible": false,
@@ -34,6 +34,12 @@
 		}
 	},
 	"functions": {
+		"fileOpen": {"args": ["string","string"], "return": "int"},
+		"fileClose": {"args": ["int"]},
+		"fileRead": {"args": ["int"], "return": "buffer"},
+		"fileWrite": {"args": ["int","buffer"]},
+		"fileReadString": {"args": ["int"], "return": "string"},
+		"fileWriteString": {"args": ["int","string"]},
 		"getFsInstance": {"return": "Fs"},
 		"scheduleRestart": {},
 		"collectInfo": {"return": "InfoRecord"}
