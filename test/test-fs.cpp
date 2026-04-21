@@ -1,4 +1,3 @@
-#define PRIVATE_FS_CONSTRUCTOR_FOR_TESTING
 #include <cstdio>
 #include <Fs.h>
 #include <cassert>

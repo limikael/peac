@@ -1,6 +1,7 @@
 #include "Fs.h"
 
-FileHandle::FileHandle() {
+FileHandle::FileHandle(int id_) {
+	id=id_;
 	drainOnTick=true;
 }
 
@@ -43,16 +44,13 @@ void FileHandle::tick() {
 		drainEvent.emit();
 
 	drainOnTick=false;
-	if (/*haveNewData &&*/ readBuffer.size() && !sync) {
-		//haveNewData=false;
+	if (readBuffer.size() && !sync) {
 		dataEvent.emit(readBuffer);
 		readBuffer.clear();
 		auto otherShared=other.lock();
 		if (otherShared)
 			otherShared->drainOnTick=true;
 	}
-
-	//haveNewData=false;
 }
 
 void FileHandle::close() {
@@ -60,7 +58,6 @@ void FileHandle::close() {
 		return;
 
 	closed=true;
-	//other.lock()->close();
 	auto otherShared=other.lock();
 	if (otherShared)
 		other.lock()->closeEvent.emit();
@@ -112,9 +109,9 @@ void FileHandle::setSync(bool c) {
 	}
 }
 
-FileHandlePair::FileHandlePair() {
-	first=std::make_shared<FileHandle>();
-	second=std::make_shared<FileHandle>();
+FileHandlePair::FileHandlePair(int firstId, int secondId) {
+	first=std::make_shared<FileHandle>(firstId);
+	second=std::make_shared<FileHandle>(secondId);
 	first->setOther(second);
 	second->setOther(first);
 }
@@ -144,7 +141,7 @@ std::shared_ptr<FileHandle> OpenEvent::accept() {
 }
 
 std::shared_ptr<FileHandlePair> Fs::createFileHandlePair() {
-	std::shared_ptr<FileHandlePair> pair=std::make_shared<FileHandlePair>();
+	std::shared_ptr<FileHandlePair> pair=std::make_shared<FileHandlePair>(nextId++,nextId++);
 	pairs.push_back(pair);
 	return pair;
 }
@@ -173,10 +170,6 @@ void Fs::tick() {
 	        pairs.begin(),
 	        pairs.end(),
 	        [](const std::shared_ptr<FileHandlePair>& p) {
-	        	/*if (p->isClosed()) {
-					p->getFirst()->closeEvent.emit();
-					p->getSecond()->closeEvent.emit();
-	        	}*/
 	            return p->isClosed();
 	        }
 	    ),

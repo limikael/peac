@@ -12,7 +12,7 @@
 
 class FileHandle {
 public:
-	FileHandle();
+	FileHandle(int id);
 	~FileHandle() { /*Serial.printf("FileHandle destructor...\n");*/ }
 	void write(std::vector<uint8_t> data);
 	std::vector<uint8_t> read();
@@ -32,15 +32,15 @@ private:
 	void handleIncomingSync(std::vector<uint8_t> data);
 	bool closed=false;
 	bool sync=false;
-	//bool haveNewData=false;
 	bool drainOnTick=false;
 	std::weak_ptr<FileHandle> other;
 	std::vector<uint8_t> readBuffer;
+	int id;
 };
 
 class FileHandlePair {
 public:
-	FileHandlePair();
+	FileHandlePair(int firstId, int secondId);
 	std::shared_ptr<FileHandle> getFirst() { return first; }
 	std::shared_ptr<FileHandle> getSecond() { return second; }
 	void tick();
@@ -77,6 +77,7 @@ public:
 	Dispatcher<std::shared_ptr<OpenEvent>> openRequest;
 
 private:
+	int nextId=1;
 	Fs() {}
 	std::vector<std::shared_ptr<FileHandlePair>> pairs;
 };

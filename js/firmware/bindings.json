@@ -8,6 +8,7 @@
 			}
 		},
 		"FileHandle": {
+			"constructible": false,
 			"methods": {
 				"close": {},
 				"write": {"args": ["buffer"]}
