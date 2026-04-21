@@ -1,77 +1,75 @@
 #include "Fs.h"
 
-FileHandle::FileHandle(int id_) {
-	id=id_;
+FileHandle::FileHandle() {
 	drainOnTick=true;
 }
 
 void FileHandle::write(std::vector<uint8_t> data) {
-	if (isClosed() || isPeerClosed())
+	if (isClosed() || isClosing())
 		return;
 
 	auto otherShared=other.lock();
 	if (!otherShared)
 		return;
 
-	if (sync)
-		otherShared->handleIncomingSync(data);
-
-	else
-		otherShared->handleIncoming(data);
-}
-
-std::vector<uint8_t> FileHandle::read() {
-	assert(sync);
-	if (!readBuffer.size() && !isClosed() && !isPeerClosed()) {
-		auto otherShared=other.lock();
-		if (otherShared)
-			otherShared->drainEvent.emit();
-	}
-
-	std::vector<uint8_t> data=readBuffer;
-	readBuffer.clear();
-	if (isPeerClosed() && !readBuffer.size())
-		close();
-
-	return data;
+	otherShared->handleIncoming(data);
 }
 
 void FileHandle::tick() {
-	if (isPeerClosed() && !readBuffer.size())
-		close();
+	if (isClosed())
+		return;
 
-	if (drainOnTick && !isClosed() && !isPeerClosed())
+	if (isClosing() && !readBuffer.size()) {
+		this->close();
+		this->closeEvent.emit();
+	}
+
+	if (drainOnTick && !isClosed() && !isClosing())
 		drainEvent.emit();
 
 	drainOnTick=false;
-	if (readBuffer.size() && !sync) {
-		dataEvent.emit(readBuffer);
-		readBuffer.clear();
+	if (readBuffer.size() && dataEventSize) {
+		if (dataEventSize>0 && dataEventSize<readBuffer.size()) {
+			std::vector<uint8_t> tosend(
+				readBuffer.begin(),
+				readBuffer.begin()+dataEventSize
+			);
+
+			readBuffer.erase(
+				readBuffer.begin(),
+                readBuffer.begin()+dataEventSize
+            );
+
+			dataEvent.emit(tosend);
+		}
+
+		else {
+			dataEvent.emit(readBuffer);
+			readBuffer.clear();
+		}
+
 		auto otherShared=other.lock();
 		if (otherShared)
 			otherShared->drainOnTick=true;
 	}
 }
 
+void FileHandle::setDataEventSize(int v) { 
+	dataEventSize=v;
+	auto otherShared=other.lock();
+	if (otherShared && !isClosing())
+		otherShared->drainOnTick=true;
+}
+
 void FileHandle::close() {
-	if (closed)
-		return;
-
 	closed=true;
-	auto otherShared=other.lock();
-	if (otherShared)
-		other.lock()->closeEvent.emit();
 }
 
-bool FileHandle::isPeerSync() {
-	auto otherShared=other.lock();
-	if (!otherShared)
-		return false;
-
-	return otherShared->sync;
+void FileHandle::handleIncoming(std::vector<uint8_t> data) {
+	readBuffer.insert(readBuffer.end(), data.begin(), data.end());
 }
 
-bool FileHandle::isPeerClosed() {
+bool FileHandle::isClosing() {
 	auto otherShared=other.lock();
 	if (!otherShared)
 		return true;
@@ -79,39 +77,32 @@ bool FileHandle::isPeerClosed() {
 	return otherShared->isClosed();
 }
 
-void FileHandle::handleIncomingSync(std::vector<uint8_t> data) {
-	readBuffer.insert(readBuffer.end(), data.begin(), data.end());
-	dataEvent.emit(readBuffer);
-	readBuffer.clear();
+int FileHandle::getDataWriteAdviceSize() {
+    auto otherShared=other.lock();
+    if (!otherShared)
+        return 0;
+
+    return otherShared->getIncomingCapacity();
 }
 
-void FileHandle::handleIncoming(std::vector<uint8_t> data) {
-	readBuffer.insert(readBuffer.end(), data.begin(), data.end());
-	//haveNewData=true;
+int FileHandle::getIncomingCapacity() {
+    if (dataEventSize == 0)
+        return 0;
+
+    int target;
+
+    if (dataEventSize > 0)
+        target = dataEventSize * 2;
+    else
+        target = 65536;
+
+    int available = target - readBuffer.size();
+    return available > 0 ? available : 0;
 }
 
-void FileHandle::setSync(bool c) {
-	sync=c;
-	if (isPeerClosed())
-		return;
-
-	auto otherShared=other.lock();
-	if (otherShared)
-		return;
-
-	if (sync) {
-		assert(!isPeerSync());
-		otherShared->drainOnTick=false;
-	}
-
-	else {
-		otherShared->drainOnTick=true;
-	}
-}
-
-FileHandlePair::FileHandlePair(int firstId, int secondId) {
-	first=std::make_shared<FileHandle>(firstId);
-	second=std::make_shared<FileHandle>(secondId);
+FileHandlePair::FileHandlePair() {
+	first=std::make_shared<FileHandle>();
+	second=std::make_shared<FileHandle>();
 	first->setOther(second);
 	second->setOther(first);
 }
@@ -141,7 +132,7 @@ std::shared_ptr<FileHandle> OpenEvent::accept() {
 }
 
 std::shared_ptr<FileHandlePair> Fs::createFileHandlePair() {
-	std::shared_ptr<FileHandlePair> pair=std::make_shared<FileHandlePair>(nextId++,nextId++);
+	std::shared_ptr<FileHandlePair> pair=std::make_shared<FileHandlePair>();
 	pairs.push_back(pair);
 	return pair;
 }
@@ -197,18 +188,6 @@ std::shared_ptr<Fs> Fs::getInstance() {
 
 std::shared_ptr<Fs> Fs::createForTesting() {
 	return std::shared_ptr<Fs>(new Fs());
-}
-
-std::shared_ptr<FileHandle> Fs::getFileHandle(int fid) {
-	for (auto fp: pairs) {
-		if (fp->getFirst()->getId()==fid)
-			return fp->getFirst();
-
-		if (fp->getSecond()->getId()==fid)
-			return fp->getSecond();
-	}
-
-	return nullptr;
 }
 
 std::shared_ptr<Fs> getFsInstance() {

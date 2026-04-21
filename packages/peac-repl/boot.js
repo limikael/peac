@@ -14,43 +14,38 @@ class Repl {
     }
 
     writeString(s) {
-        function encodeAscii(str) {
-            const arr = new Uint8Array(str.length);
-            for (let i = 0; i < str.length; i++) {
-                arr[i] = str.charCodeAt(i);
-            }
-            return arr;
+        this.serial.write(encodeAscii(s));
+    }
+
+    async runMessageLine(line) {
+        let messageId;
+        try {
+            //console.log("line: "+this.line);
+            let message=JSON.parse(line);
+            messageId=message.id;
+            let res=await this.model[message.method](...message.params);
+            this.writeString("\u001b"+JSON.stringify({
+                id: message.id,
+                result: res
+            })+"\n");
         }
 
-        this.serial.write(encodeAscii(s));
+        catch (e) {
+            this.writeString("\u001b"+JSON.stringify({
+                id: messageId,
+                error: {
+                    message: String(e),
+                    also: "test"
+                }
+            })+"\n");
+        }
     }
 
     handleInput(char) {
         if (this.escapeMode) {
             this.line+=char;
             if (char=="\n") {
-                let messageId;
-                try {
-                    //console.log("line: "+this.line);
-                    let message=JSON.parse(this.line);
-                    messageId=message.id;
-                    let res=this.model[message.method](...message.params);
-                    this.writeString("\u001b"+JSON.stringify({
-                        id: message.id,
-                        result: res
-                    })+"\n");
-                }
-
-                catch (e) {
-                    this.writeString("\u001b"+JSON.stringify({
-                        id: messageId,
-                        error: {
-                            message: String(e),
-                            also: "test"
-                        }
-                    })+"\n");
-                }
-
+                this.runMessageLine(this.line);
                 this.escapeMode=false;
                 this.line="";
             }

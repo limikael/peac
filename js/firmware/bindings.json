@@ -1,5 +1,5 @@
 {
-	"include": ["Fs.h","Arduino.h","QuickjsEngine.h","InfoRecord.h","fdio.h"],
+	"include": ["Fs.h","Arduino.h","QuickjsEngine.h","InfoRecord.h"],
 	"classes": {
 		"Fs": {
 			"constructible": false,
@@ -11,11 +11,15 @@
 			"constructible": false,
 			"methods": {
 				"close": {},
-				"write": {"args": ["buffer"]}
+				"write": {"args": ["buffer"]},
+				"setDataEventSize": {"args": ["int"]},
+				"isClosed": {"return": "int"},
+				"isClosing": {"return": "int"}
 			},
 			"events": {
 				"data": {"args": ["buffer"], "dispatcher": "dataEvent"},
-				"close": {"dispatcher": "closeEvent"}
+				"close": {"dispatcher": "closeEvent"},
+				"drain": {"dispatcher": "drainEvent"}
 			}
 		},
 		"StringArray": {
@@ -34,12 +38,6 @@
 		}
 	},
 	"functions": {
-		"fileOpen": {"args": ["string","string"], "return": "int"},
-		"fileClose": {"args": ["int"]},
-		"fileRead": {"args": ["int"], "return": "buffer"},
-		"fileWrite": {"args": ["int","buffer"]},
-		"fileReadString": {"args": ["int"], "return": "string"},
-		"fileWriteString": {"args": ["int","string"]},
 		"getFsInstance": {"return": "Fs"},
 		"scheduleRestart": {},
 		"collectInfo": {"return": "InfoRecord"}

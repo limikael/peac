@@ -99,7 +99,7 @@ void test_fs_accept_read() {
 	assert(fs->getNumOpenFiles()==0);
 }
 
-void test_buffered() {
+void test_event_size() {
 	printf("- fs can do buffered read\n");
 	auto fs=Fs::createForTesting();
 
@@ -107,120 +107,37 @@ void test_buffered() {
 		if (ev->getPathname()=="/f1") {
 			auto f=ev->accept();
 			f->write(stringToVec("hello1"));
-		}
-	});
-
-	auto f1=fs->open("/f1","r");
-	f1->setSync(true);
-	f1->dataEvent.on([f1](std::vector<uint8_t> v) {
-		assert(!v.size());
-	});
-
-	fs->tick();
-
-	auto s=vecToString(f1->read());
-	assert(s=="hello1");
-}
-
-void test_buffered_delayed_write() {
-	printf("- fs can do buffered read with delay\n");
-	auto fs=Fs::createForTesting();
-
-	std::deque<std::string> send={"hello1","hello2","hello3"};
-
-	fs->openRequest.on([&send](std::shared_ptr<OpenEvent> ev){
-		if (ev->getPathname()=="/f1") {
-			auto f=ev->accept();
-			f->drainEvent.on([f,&send]() {
-				f->write(stringToVec(send.front()));
-				send.pop_front();
-				if (send.size()==0)
-					f->close();
-			});
-		}
-	});
-
-	auto f1=fs->open("/f1","r");
-	f1->setSync(true);
-
-	std::vector<std::string> rec;
-	while (!f1->isClosed()) {
-		fs->tick();
-		fs->tick();
-		fs->tick();
-		fs->tick();
-		rec.push_back(vecToString(f1->read()));
-		fs->tick();
-		fs->tick();
-		fs->tick();
-		fs->tick();
-	}
-
-	assert(rec.size()==3);
-
-	/*for (int i=0; i<rec.size(); i++) {
-		printf("s: %s\n",rec[i].c_str());
-	}*/
-}
-
-void test_buffered_delayed_write2() {
-	printf("- fs can do buffered read with delay in another way\n");
-	auto fs=Fs::createForTesting();
-
-	std::deque<std::string> send={"hello1","hello2","hello3"};
-
-	fs->openRequest.on([&send](std::shared_ptr<OpenEvent> ev){
-		if (ev->getPathname()=="/f1") {
-			auto f=ev->accept();
-			while (send.size()) {
-				f->write(stringToVec(send.front()));
-				send.pop_front();
-			}
 			f->close();
 		}
 	});
 
+	std::vector<std::vector<uint8_t>> recv;
+
+	bool gotClose=false;
 	auto f1=fs->open("/f1","r");
-	f1->setSync(true);
-
-	std::vector<std::string> rec;
-	while (!f1->isClosed()) {
-		//printf("reading\n");
-		fs->tick();
-		rec.push_back(vecToString(f1->read()));
-		fs->tick();
-	}
-
-	assert(rec.at(0)=="hello1hello2hello3");
-
-//	assert(rec.size()==3);
-}
-
-void test_buffered_app_write() {
-	printf("- fs can do buffered write\n");
-	auto fs=Fs::createForTesting();
-
-	std::string written;
-
-	fs->openRequest.on([&written](std::shared_ptr<OpenEvent> ev){
-		if (ev->getPathname()=="/f1") {
-			auto f=ev->accept();
-			f->dataEvent.on([f,&written](std::vector<uint8_t> b) {
-				written+=vecToString(b);
-			});
-		}
+	f1->closeEvent.on([&gotClose](){
+		gotClose=true;
+		//printf("close...\n");
+	});
+	f1->dataEvent.on([f1,&recv](std::vector<uint8_t> v) {
+		std::string s=vecToString(v);
+		recv.push_back(v);
 	});
 
-	auto f1=fs->open("/f1","r");
-	//assert(f1);
+	f1->setDataEventSize(0);
+	for (int i=0; i<10; i++)
+		fs->tick();
 
-	f1->setSync(true);
-	f1->write(stringToVec("hello"));
-	f1->write(stringToVec("again"));
+	assert(recv.size()==0);
+	assert(!gotClose);
+	assert(f1->isClosing());
+	assert(!f1->isClosed());
 
-	assert(written=="helloagain");
+	f1->setDataEventSize(2);
+	for (int i=0; i<10; i++)
+		fs->tick();
 
-	//printf("before...\n");
-	fs->tick();
-	//printf("after...\n");
+	assert(recv.size()==3);
+	assert(gotClose);
+	assert(f1->isClosed());
 }

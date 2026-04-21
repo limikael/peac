@@ -60,6 +60,7 @@ void QuickjsEngine::close() {
 }
 
 void QuickjsEngine::loop() {
+	jsvalQuickjsRunJobs();
 	Fs::getInstance()->tick();
 
 	if (warningTimer.tick()) {

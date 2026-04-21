@@ -12,36 +12,33 @@
 
 class FileHandle {
 public:
-	FileHandle(int id);
+	FileHandle();
 	~FileHandle() { /*Serial.printf("FileHandle destructor...\n");*/ }
 	void write(std::vector<uint8_t> data);
-	std::vector<uint8_t> read();
 	void tick();
 	void close();
 	bool isClosed() { return closed; }
-	bool isPeerClosed();
-	bool isPeerSync();
+	bool isClosing();
 	void setOther(std::weak_ptr<FileHandle> other_) { other=other_; }
-	void setSync(bool b);
-	int getId() { return id; }
+	void setDataEventSize(int v);
+	int getDataWriteAdviceSize();
 	Dispatcher<std::vector<uint8_t>> dataEvent;
 	Dispatcher<> closeEvent;
 	Dispatcher<> drainEvent;
 
 private:
+	int getIncomingCapacity();
 	void handleIncoming(std::vector<uint8_t> data);
-	void handleIncomingSync(std::vector<uint8_t> data);
 	bool closed=false;
-	bool sync=false;
 	bool drainOnTick=false;
 	std::weak_ptr<FileHandle> other;
 	std::vector<uint8_t> readBuffer;
-	int id;
+	int dataEventSize=-1;
 };
 
 class FileHandlePair {
 public:
-	FileHandlePair(int firstId, int secondId);
+	FileHandlePair();
 	std::shared_ptr<FileHandle> getFirst() { return first; }
 	std::shared_ptr<FileHandle> getSecond() { return second; }
 	void tick();
@@ -56,6 +53,7 @@ class OpenEvent {
 public:
 	OpenEvent(std::shared_ptr<FileHandlePair> pair_, std::string pathname_, std::string mode_);
 	std::string getPathname() { return pathname; }
+	std::string getMode() { return mode; }
 	bool isAccepted() { return accepted; }
 	std::shared_ptr<FileHandle> accept();
 
@@ -76,10 +74,8 @@ public:
 	static std::shared_ptr<Fs> getInstance();
 	static std::shared_ptr<Fs> createForTesting();
 	Dispatcher<std::shared_ptr<OpenEvent>> openRequest;
-	std::shared_ptr<FileHandle> getFileHandle(int fid);
 
 private:
-	int nextId=1;
 	Fs() {}
 	std::vector<std::shared_ptr<FileHandlePair>> pairs;
 };

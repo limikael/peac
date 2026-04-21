@@ -49,7 +49,6 @@ export async function peacInit({cwd}) {
 
 export async function peacCat({cwd, port, args}) {
     let device=await createDevice({port});
-    //console.log(port);
     let content=await device.readFile(args[0]);
     console.log(content);
     await device.close();

@@ -20,7 +20,7 @@ void serial_console_setup() {
 		if (!f)
 			return;
 
-		f->write(stringToVec("hello"));
+		f->write(stringToVec("hello here is some data in this dynamically generated file"));
 		f->close();
 	});
 

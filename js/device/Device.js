@@ -18,9 +18,10 @@ export default class Device {
         let s;
 
         do {
-            s=await this.connection.fileReadString(fid); //,64);
-            //console.log(s);
-            content+=s;
+            s=await this.connection.fileReadString(fid,64);
+            //console.log("got: "+s);
+            if (s!==null)
+	            content+=s;
         } while (s!==undefined && s!==null && s.length);
 
         //console.log("done... closing...");
