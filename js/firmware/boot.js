@@ -1,6 +1,3 @@
-globalThis.fidMap=new Map();
-globalThis.nextFid=1;
-
 function encodeAscii(str) {
     const arr=new Uint8Array(str.length);
     for (let i=0; i<str.length; i++)
@@ -16,6 +13,9 @@ function decodeAscii(buf) {
 
     return s;
 }
+
+globalThis.fidMap=new Map();
+globalThis.nextFid=1;
 
 function fileOpen(pathname, mode) {
 	let fid=nextFid++;

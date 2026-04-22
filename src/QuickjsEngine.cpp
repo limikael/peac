@@ -24,12 +24,13 @@ void QuickjsEngine::setup() {
 		record->setInt("largestBlock",info.largest_free_block);
 		record->setInt("freeBlocks",info.free_blocks);
 		record->setInt("openFiles",Fs::getInstance()->getNumOpenFiles());
+		record->setInt("liveObjects",peac_bindings_get_num_objects());
 	});
 }
 
 void QuickjsEngine::begin() {
 	//pinMode(4,INPUT_PULLUP);
-	//Serial.printf("***** starting...\n");
+	Serial.printf("\n**** starting ****\n");
 
 	assert(ctx==NULL);
 	JSRuntime *rt=JS_NewRuntime();
@@ -52,11 +53,11 @@ void QuickjsEngine::close() {
 	peac_notify_stop();
 	peac_bindings_exit();
 	JSRuntime *rt=JS_GetRuntime(ctx);
-    Serial.printf("**** freeing context... ****\n");
+    //Serial.printf("**** freeing context... ****\n");
     JS_FreeContext(ctx);
     JS_RunGC(rt);
     assert(peac_bindings_get_num_objects()==0);
-    Serial.printf("**** cleanup complete, releasing runtime... ****\n");
+    //Serial.printf("**** cleanup complete, releasing runtime... ****\n");
     JS_FreeRuntime(rt);
 	ctx=nullptr;
 }

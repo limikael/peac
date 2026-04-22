@@ -15,6 +15,7 @@ int main() {
 	test_fs_accept_read();
 	test_InfoRecord();
 	test_event_size();
+	test_sys();
 
 	return 0;
 }
