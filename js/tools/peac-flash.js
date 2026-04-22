@@ -85,6 +85,7 @@ class PeacFlasher {
 
         ev.addBootFile(path.join(__dirname,"../firmware/boot.js"));
         ev.addBinding(path.join(__dirname,"../firmware/bindings.json"));
+        ev.addBinding(path.join(__dirname,"../firmware/engine-bindings.json"));
         ev.addIncludeDir(peabindGetLibConf("includeDir"));
         ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addIncludeDir(this.targetPath);

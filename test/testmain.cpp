@@ -5,6 +5,7 @@ void test_fs_accept();
 void test_fs_accept_read();
 void test_InfoRecord();
 void test_event_size();
+void test_sys();
 
 int main() {
 	printf("Running tests...\n");

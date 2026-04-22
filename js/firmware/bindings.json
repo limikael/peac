@@ -1,5 +1,5 @@
 {
-	"include": ["Fs.h","Arduino.h","QuickjsEngine.h","InfoRecord.h"],
+	"include": ["Fs.h","InfoRecord.h"],
 	"classes": {
 		"Fs": {
 			"constructible": false,
@@ -39,7 +39,6 @@
 	},
 	"functions": {
 		"getFsInstance": {"return": "Fs"},
-		"scheduleRestart": {},
 		"collectInfo": {"return": "InfoRecord"}
 	}
 }

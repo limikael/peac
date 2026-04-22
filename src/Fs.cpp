@@ -174,7 +174,8 @@ void Fs::close() {
 	for (auto fp: pairs)
 		fp->close();
 
-	tick();
+	for (int i=0; i<10; i++)
+		tick();
 }
 
 std::shared_ptr<Fs> Fs::getInstance() {

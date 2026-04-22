@@ -52,9 +52,11 @@ void QuickjsEngine::close() {
 	peac_notify_stop();
 	peac_bindings_exit();
 	JSRuntime *rt=JS_GetRuntime(ctx);
+    Serial.printf("**** freeing context... ****\n");
     JS_FreeContext(ctx);
     JS_RunGC(rt);
     assert(peac_bindings_get_num_objects()==0);
+    Serial.printf("**** cleanup complete, releasing runtime... ****\n");
     JS_FreeRuntime(rt);
 	ctx=nullptr;
 }

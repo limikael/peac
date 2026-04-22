@@ -6,3 +6,6 @@ ext
 pnpm-lock.yaml
 pnpm-workspace.yaml
 bin
+*.out.cpp
+*.out.h
+.build

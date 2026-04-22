@@ -1,0 +1,7 @@
+g++ -c test/smalltest.cpp -o build/smalltest.cpp.o -I ext/quickjs-2025-09-13
+g++ -o bin/smalltest ext/quickjs-2025-09-13/libquickjs.a build/smalltest.cpp.o vendor/quickjs/*.c
+
+gcc -c test/smalltest.c -o build/smalltest.c.o -I ext/quickjs-2025-09-13
+gcc -o bin/smalltest build/smalltest.c.o ext/quickjs-2025-09-13/libquickjs.a -lm
+
+gcc test/smalltest.c -o bin/smalltest -Iext/quickjs-2025-09-13 ext/quickjs-2025-09-13/libquickjs.a -lm
