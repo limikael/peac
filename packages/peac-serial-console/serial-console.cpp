@@ -5,11 +5,6 @@
 
 static std::vector<std::shared_ptr<FileHandle>> openConsoles;
 
-std::vector<uint8_t> static stringToVec(std::string s) {
-	std::vector<unsigned char> v(s.begin(), s.end());
-	return v;
-}
-
 int getAllowedSendSize() {
 	if (Serial.available())
 		return 0;

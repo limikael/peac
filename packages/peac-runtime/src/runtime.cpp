@@ -5,21 +5,10 @@
 #include "SoftTimer.h"
 #include <cassert>
 
-/*void digitalToggle(int pin) {
-	pinMode(8,OUTPUT);
-	digitalWrite(pin,!digitalRead(pin));
-}
-
-void msleep(int millis) {
-	delay(millis);
-}*/
-
 void runtime_setup() {
-	//pinMode(8,OUTPUT);
 }
 
 void runtime_start() {
-	//pinMode(8,OUTPUT);
 }
 
 void runtime_loop() {
