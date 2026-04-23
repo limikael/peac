@@ -56,11 +56,16 @@ export async function peacCat({cwd, port, args}) {
 }
 
 export async function peacDeploy({cwd, port, args, main, flash}) {
+    cwd=packageDirname(cwd);
+
     if (flash)
         await peacFlash({cwd,port});
 
     if (args[0])
         main=args[0];
+
+    else if (main)
+        main=path.resolve(cwd,main);
 
     if (!main)
         throw new DeclaredError("No file to deploy.");

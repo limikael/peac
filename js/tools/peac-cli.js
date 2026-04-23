@@ -43,6 +43,7 @@ program
     .description("Deploy program.")
     .argument('[file]', 'Main file.')
     .addOption(new Option("-m, --main <file>","Main file.").env("PEAC_MAIN"))
+    .option("--flash","Flash device before deploying.")
     .action(withMergedOptions(peacDeploy));
 
 try {
