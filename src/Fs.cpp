@@ -177,6 +177,15 @@ void Fs::tick() {
 	        pairs.begin(),
 	        pairs.end(),
 	        [](const std::shared_ptr<FileHandlePair>& p) {
+	        	if (p->isClosed()) {
+	        		p->getFirst()->dataEvent.off();
+	        		p->getFirst()->drainEvent.off();
+	        		p->getFirst()->closeEvent.off();
+	        		p->getSecond()->dataEvent.off();
+	        		p->getSecond()->drainEvent.off();
+	        		p->getSecond()->closeEvent.off();
+	        	}
+
 	            return p->isClosed();
 	        }
 	    ),

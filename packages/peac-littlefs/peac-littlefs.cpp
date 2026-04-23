@@ -9,7 +9,7 @@ void littlefs_setup() {
 
     // Read
     Fs::getInstance()->openEvent.on([](std::shared_ptr<OpenEvent> ev) {
-        if (ev->getMode()!="r")
+        if (ev->getMode()!="r" || ev->getPathname()=="/hello" || ev->getPathname()=="/hello2")
             return;
 
         const std::string path = ev->getPathname();
