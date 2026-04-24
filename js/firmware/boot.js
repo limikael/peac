@@ -3,7 +3,7 @@ globalThis.nextFid=1;
 
 function fileOpen(pathname, mode) {
 	let fid=nextFid++;
-	let fh=getFsInstance().open(pathname,mode)
+	let fh=Fs.getInstance().open(pathname,mode)
 	if (!fh)
 		throw new Error("Unable to open file");
 
@@ -70,7 +70,7 @@ function fileClose(fid) {
 
 function readFile(pathname) {
 	return new Promise((resolve, reject)=>{
-		let fh=getFsInstance().open(pathname,"r");
+		let fh=Fs.getInstance().open(pathname,"r");
 		if (!fh)
 			reject(new Error("unable to open file"));
 

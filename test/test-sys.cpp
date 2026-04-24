@@ -68,10 +68,10 @@ void test_sys() {
 		f->close();
 	});
 
-	evaljs("globalThis.fs=getFsInstance()");
+	evaljs("globalThis.fs=Fs.getInstance()");
 	evaljs(readFile("js/firmware/boot.js"));
-	evaljs("globalThis.f=getFsInstance().open('/testfile','r');");
-	evaljs("globalThis.g=getFsInstance().open('/hello','r');");
+	evaljs("globalThis.f=Fs.getInstance().open('/testfile','r');");
+	evaljs("globalThis.g=Fs.getInstance().open('/hello','r');");
 //	evaljs("globalThis.f.write(encodeAscii('test'))");
 	std::string s=evaljs("globalThis.f");
 	//printf("s: %s\n",s.c_str());

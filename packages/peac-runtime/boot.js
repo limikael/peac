@@ -18,7 +18,7 @@ function clearInterval(id) {
 	clearTimer(id);
 }
 
-globalThis.fs=getFsInstance();
+globalThis.fs=Fs.getInstance();
 
 let devConsole=fs.open("/dev/console","doesn't matter");
 console={};

@@ -82,5 +82,3 @@ private:
 	Fs() {}
 	std::vector<std::shared_ptr<FileHandlePair>> pairs;
 };
-
-std::shared_ptr<Fs> getFsInstance();

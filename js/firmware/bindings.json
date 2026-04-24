@@ -4,7 +4,8 @@
 		"Fs": {
 			"constructible": false,
 			"methods": {
-				"open": {"return": "FileHandle","args":["string","string"]}
+				"open": {"return": "FileHandle","args":["string","string"]},
+				"getInstance": {"return": "Fs", "static": true}
 			}
 		},
 		"FileHandle": {
@@ -39,7 +40,6 @@
 		}
 	},
 	"functions": {
-		"getFsInstance": {"return": "Fs"},
 		"collectInfo": {"return": "InfoRecord"},
 		"encodeBase64": {"args": ["buffer"], "return": "string"},
 		"decodeBase64": {"args": ["string"], "return": "buffer"},
