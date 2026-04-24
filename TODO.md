@@ -1,11 +1,11 @@
 todo:
-- throw and handle exceptions correctly
 - rename
 - modularize
 - plugin priority
 - enable/disable plugins
 - PEABIND_AUTO_INCLUDE ?
 x static
+x throw and handle exceptions correctly
 
 backlog:
 - mquickjs
