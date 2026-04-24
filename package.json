@@ -1,8 +1,7 @@
 {
-  "name": "peac",
+  "name": "peakernel",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "ext": "./js/tools/ext.js",
     "test": "pnpm test:js && pnpm test:c",
