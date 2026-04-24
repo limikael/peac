@@ -53,6 +53,3 @@ public:
 private:
 	InfoCollector() {}
 };
-
-/*std::shared_ptr<InfoCollector> getInfoCollector();
-std::shared_ptr<InfoRecord> collectInfo();*/
