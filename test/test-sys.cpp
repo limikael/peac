@@ -69,7 +69,7 @@ void test_sys() {
 	});
 
 	evaljs("globalThis.fs=Fs.getInstance()");
-	evaljs(readFile("js/firmware/boot.js"));
+	evaljs(readFile("packages/peac-vfs/boot.js"));
 	evaljs("globalThis.f=Fs.getInstance().open('/testfile','r');");
 	evaljs("globalThis.g=Fs.getInstance().open('/hello','r');");
 //	evaljs("globalThis.f.write(encodeAscii('test'))");
