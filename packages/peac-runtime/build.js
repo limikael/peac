@@ -6,8 +6,8 @@ let __dirname=dirnameFromImportMeta(import.meta);
 build.priority=5;
 export function build(ev) {
 	ev.addBinding(path.join(__dirname,"bindings.json"));
-	ev.addSource(path.join(__dirname,"src"));
-	ev.addIncludeDir(path.join(__dirname,"src"));
+	ev.addSource(path.join(__dirname));
+	ev.addIncludeDir(path.join(__dirname));
 	ev.addSetupFunction("runtime_setup");
 	ev.addLoopFunction("runtime_loop");
 	ev.addStartFunction("runtime_start");
