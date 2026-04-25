@@ -65,20 +65,11 @@ void QuickjsEngine::runBootScript() {
 
 void QuickjsEngine::close() {
 	assert(ctx!=NULL);
-	//Serial.printf("closing fs...\n");
-	//Fs::getInstance()->close();
-	//Serial.printf("done closing fs...\n");
-	//Serial.printf("running stop funcitons...\n");
-	//peac_notify_stop();
-	//Serial.printf("exit bindings...\n");
 	peac_bindings_exit();
-	//Serial.printf("bindings exited...\n");
 	JSRuntime *rt=JS_GetRuntime(ctx);
-    //Serial.printf("freeing context... ****\n");
     JS_FreeContext(ctx);
     JS_RunGC(rt);
     assert(peac_bindings_get_num_objects()==0);
-    //Serial.printf("cleanup complete, releasing runtime... ****\n");
     JS_FreeRuntime(rt);
 	ctx=nullptr;
 }
