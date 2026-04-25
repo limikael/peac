@@ -29,14 +29,6 @@ export async function peacMonitor({cwd, port}) {
     await runCommand("pio",["device","monitor"],{cwd: targetPath});
 }
 
-export async function peacInfo({cwd, port}) {
-    let device=await createDevice({port});
-    let info=await device.getInfo();
-    console.log(JSON.stringify(info,null,2));
-
-    await device.close();
-}
-
 export async function peacInit({cwd}) {
     if (!cwd)
         cwd=process.cwd();

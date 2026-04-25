@@ -1,7 +1,2 @@
 {
-	"include": ["QuickjsEngine.h"],
-	"functions": {
-		"scheduleRestart": {"args": ["int"]},
-		"gc": {},
-	}
 }

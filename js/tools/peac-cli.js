@@ -1,11 +1,23 @@
 #!/usr/bin/env node
 import {Command, Option, program} from "commander";
 import {withMergedOptions} from "../utils/commander-util.js";
-import {peacFlash, peacMonitor, peacInfo, peacInit, peacCat, peacDeploy,
-        peacStart, peacStop, peacLsmod, peacEnable, peacDisable} from "./peac-commands.js";
-import {loadProjectEnv} from "../utils/env-util.js";
+import {peacFlash, peacMonitor, peacInit, peacCat, peacDeploy,
+        peacStart, peacStop, peacLsmod, peacEnable, peacDisable,
+        peacLoadHookChannel} from "./peac-commands.js";
+import {loadProjectEnv, getProjectCwd} from "../utils/env-util.js";
+import PeacCliConfigEvent from "./PeacCliConfigEvent.js";
+
+Command.prototype.mergedAction=function(fn) {
+    this.action(withMergedOptions(fn));
+}
 
 loadProjectEnv();
+
+let cwd=getProjectCwd();
+if (cwd) {
+    let channel=await peacLoadHookChannel({cwd});
+    await channel.dispatch(new PeacCliConfigEvent(program));
+}
 
 program
     .name('peac')
@@ -23,11 +35,6 @@ program
     .command('monitor')
     .description("Open monitor.")
     .action(withMergedOptions(peacMonitor));
-
-program
-    .command('info')
-    .description("Show runtime info.")
-    .action(withMergedOptions(peacInfo));
 
 program
     .command("init")

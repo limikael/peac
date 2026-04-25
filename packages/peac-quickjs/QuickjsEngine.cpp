@@ -1,8 +1,11 @@
 #include "QuickjsEngine.h"
 #include "peac_bindings.h"
 #include "jsval-util.h"
-#include "InfoRecord.h"
 #include "esp_heap_caps.h"
+
+#ifdef PEAC_INFO
+#include "InfoRecord.h"
+#endif
 
 QuickjsEngine::QuickjsEngine(const char *boot_)
 		:warningTimer(1000), gcTimer(100) {
@@ -10,6 +13,7 @@ QuickjsEngine::QuickjsEngine(const char *boot_)
 }
 
 void QuickjsEngine::setup() {
+#ifdef PEAC_INFO
 	InfoCollector::getInstance()->collectEvent.on([this](std::shared_ptr<InfoRecord> record) {
 		multi_heap_info_t info;
 		heap_caps_get_info(&info, MALLOC_CAP_DEFAULT);
@@ -28,6 +32,7 @@ void QuickjsEngine::setup() {
 		else
 			record->setString("state","stopped");
 	});
+#endif
 }
 
 void QuickjsEngine::begin() {

@@ -1,0 +1,26 @@
+{
+	"include": ["InfoRecord.h"],
+	"classes": {
+		"StringArray": {
+			"methods": {
+				"size": {"return": "int"},
+				"at": {"return": "string", "args": ["int"]}
+			}
+		},
+		"InfoRecord": {
+			"methods": {
+				"getString": {"args": ["string"], "return": "string"},
+				"getInt": {"args": ["string"], "return": "int"},
+				"getType": {"args": ["string"], "return": "string"},
+				"getKeys": {"return": "StringArray"}
+			}
+		},
+		"InfoCollector": {
+			"constructible": false,
+			"methods": {
+				"collectInfo": {"return": "InfoRecord"},
+				"getInstance": {"return": "InfoCollector", "static": true}
+			}
+		}
+	}
+}

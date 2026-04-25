@@ -1,0 +1,28 @@
+{
+	"include": ["Fs.h",],
+	"classes": {
+		"Fs": {
+			"constructible": false,
+			"methods": {
+				"open": {"return": "FileHandle","args":["string","string"]},
+				"getInstance": {"return": "Fs", "static": true}
+			}
+		},
+		"FileHandle": {
+			"constructible": false,
+			"methods": {
+				"close": {},
+				"write": {"args": ["buffer"]},
+				"setDataEventSize": {"args": ["int"]},
+				"getDataWriteAdviceSize": {"return": "int"},
+				"isClosed": {"return": "int"},
+				"isClosing": {"return": "int"}
+			},
+			"events": {
+				"data": {"args": ["buffer"], "dispatcher": "dataEvent"},
+				"close": {"dispatcher": "closeEvent"},
+				"drain": {"dispatcher": "drainEvent"}
+			}
+		}
+	},
+}

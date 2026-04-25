@@ -12,6 +12,11 @@ export default class BuildEvent extends HookEvent {
         this.loopFunctions=[];
         this.startFunctions=[];
         this.stopFunctions=[];
+        this.defines={};
+    }
+
+    addDefine(key, value) {
+        this.defines[key]=value;
     }
 
     addBootFile(bootFile, {priority}={priority: 10}) {

@@ -1,5 +1,8 @@
 #include "Fs.h"
+
+#ifdef PEAC_INFO
 #include "InfoRecord.h"
+#endif
 
 FileHandle::FileHandle() {
 	/*Serial.printf("FileHandle constructor...\n");*/
@@ -221,9 +224,11 @@ std::shared_ptr<Fs> Fs::createForTesting() {
 }
 
 void fs_setup() {
+#ifdef PEAC_INFO
 	InfoCollector::getInstance()->collectEvent.on([](std::shared_ptr<InfoRecord> record) {
 		record->setInt("openFiles",Fs::getInstance()->getNumOpenFiles());
 	});
+#endif
 }
 
 void fs_stop() {

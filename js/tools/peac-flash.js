@@ -65,6 +65,7 @@ class PeacFlasher {
                 -DEMSCRIPTEN
                 -DJSVAL_TARGET_QUICKJS
                 ${"\n"+includeDirs.map(d=>`${" ".repeat(16)}-I${d}`).join("\n")}
+                ${"\n"+Object.entries(ev.defines).map(([k,v])=>`${" ".repeat(16)}-D${k}=${v?v:""}`).join("\n")}
             monitor_speed = 115200
             upload_port=${port}
             monitor_port=${port}
@@ -75,27 +76,17 @@ class PeacFlasher {
     }
 
     async createBuildEvent() {
-        /*let hookChannel=await loadHookChannel({
-            cwd: this.cwd,
-            keyword: "peac-plugin",
-            exportPath: "peac-build-hooks",
-            extraModuleDirs: path.join(__dirname,"../../packages")
-        });*/
-
         let hookChannel=await peacLoadHookChannel({cwd: this.cwd});
         let ev=await hookChannel.dispatch(new PeacBuildEvent());
 
-        ev.addBootFile(path.join(__dirname,"../firmware/boot.js"));
-        ev.addBinding(path.join(__dirname,"../firmware/bindings.json"));
-        ev.addBinding(path.join(__dirname,"../firmware/engine-bindings.json"));
-        ev.addIncludeDir(peabindGetLibConf("includeDir"));
-        ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addIncludeDir(this.targetPath);
         ev.addIncludeDir(path.join(__dirname,"../../src"));
-        ev.addSource(path.join(__dirname,"../../vendor/quickjs"));
         ev.addSource(path.join(__dirname,"../../src"));
         ev.addSource(this.targetPath);
 
+        ev.addIncludeDir(peabindGetLibConf("includeDir"));
+        ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
+        ev.addSource(path.join(__dirname,"../../vendor/quickjs"));
         for (let source of peabindGetLibConf("sources",{target: "quickjs"}))
             ev.addSource(source);
 

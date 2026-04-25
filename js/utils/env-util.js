@@ -24,9 +24,18 @@ function getCwd(argv = process.argv) {
     return process.cwd();
 }
 
-export function loadProjectEnv(argv = process.argv) {
+export function getProjectCwd(argv = process.argv) {
     let cwd=getCwd();
-    if (!packageUpSync({cwd}))
+    let upCwd=packageUpSync({cwd});
+    if (!upCwd)
+        return;
+
+    return packageDirname(cwd);
+}
+
+export function loadProjectEnv(argv = process.argv) {
+    let cwd=getProjectCwd();
+    if (!cwd)
         return;
 
     const projectDir = packageDirname(cwd);

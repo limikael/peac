@@ -1,5 +1,5 @@
 {
-	"include": ["runtime.h","Timer.h"],
+	"include": ["runtime.h","Timer.h","encoding.h"],
 	"classes": {
 		"Timer": {
 			"methods": {
@@ -13,7 +13,11 @@
 	"functions": {
 		"createTimeout": {"args": ["int"], "return": "Timer"},
 		"createInterval": {"args": ["int"], "return": "Timer"},
-		"clearTimer": {"args": ["int"]}
+		"clearTimer": {"args": ["int"]},
+		"encodeBase64": {"args": ["buffer"], "return": "string"},
+		"decodeBase64": {"args": ["string"], "return": "buffer"},
+		"encodeAscii": {"args": ["string"], "return": "buffer"},
+		"decodeAscii": {"args": ["buffer"], "return": "string"},
 	}
 }
 

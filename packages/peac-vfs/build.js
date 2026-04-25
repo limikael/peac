@@ -9,4 +9,6 @@ export function build(ev) {
 	ev.addStopFunction("fs_stop");
 	ev.addLoopFunction("fs_loop");
 	ev.addSetupFunction("fs_setup");
+	ev.addBinding(path.join(__dirname,"bindings.json"));
+	ev.addBootFile(path.join(__dirname,"boot.js"));
 }

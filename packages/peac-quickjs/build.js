@@ -11,4 +11,5 @@ export function build(ev) {
 	ev.addStartFunction("quickjs_run_script",{priority: 15});
 	ev.addLoopFunction("quickjs_loop");
 	ev.addStopFunction("quickjs_stop",{priority: 1});
+    ev.addBinding(path.join(__dirname,"bindings.json"));
 }
