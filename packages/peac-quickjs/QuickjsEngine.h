@@ -13,7 +13,8 @@ public:
 	void begin();
 	void close();
 	void loop();
-	void scheduleRestart(bool running);
+	void setRunning(bool running_) { running=running_; }
+	void runBootScript();
 	void gc();
 
 private:
@@ -22,6 +23,5 @@ private:
 	SoftTimer warningTimer;
 	SoftTimer gcTimer;
 	JSContext *ctx=nullptr;
-	bool restartScheduled=false;
 	const char *boot;
 };

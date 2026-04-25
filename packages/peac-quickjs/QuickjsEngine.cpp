@@ -1,12 +1,8 @@
 #include "QuickjsEngine.h"
 #include "peac_bindings.h"
 #include "jsval-util.h"
-#include "Fs.h"
 #include "InfoRecord.h"
 #include "esp_heap_caps.h"
-
-extern "C" void peac_notify_start();
-extern "C" void peac_notify_stop();
 
 QuickjsEngine::QuickjsEngine(const char *boot_)
 		:warningTimer(1000), gcTimer(100) {
@@ -23,7 +19,6 @@ void QuickjsEngine::setup() {
 		record->setInt("minimumFreeBytes",info.minimum_free_bytes);
 		record->setInt("largestBlock",info.largest_free_block);
 		record->setInt("freeBlocks",info.free_blocks);
-		record->setInt("openFiles",Fs::getInstance()->getNumOpenFiles());
 		record->setInt("liveObjects",peac_bindings_get_num_objects());
 		record->setInt("numListeners",peac_bindings_get_num_listeners());
 
@@ -42,7 +37,9 @@ void QuickjsEngine::begin() {
 	errorMessage="";
 
 	peac_bindings_init(ctx);
-	peac_notify_start();
+}
+
+void QuickjsEngine::runBootScript() {
 	JSVAL res=jsvalEval(boot);
 	if (jsvalHasException()) {
 		errorMessage=jsvalCatchExceptionStdString();
@@ -64,20 +61,15 @@ void QuickjsEngine::begin() {
 		jsvalFree(bootFn);
 		jsvalFree(bootRes);
 	}
-
-	multi_heap_info_t info;
-	heap_caps_get_info(&info, MALLOC_CAP_DEFAULT);
-	//Serial.printf("total used: %d\n",info.total_allocated_bytes);
 }
 
 void QuickjsEngine::close() {
 	assert(ctx!=NULL);
 	//Serial.printf("closing fs...\n");
-	Fs::getInstance()->close();
+	//Fs::getInstance()->close();
 	//Serial.printf("done closing fs...\n");
-	assert(Fs::getInstance()->getNumOpenFiles()==0);
 	//Serial.printf("running stop funcitons...\n");
-	peac_notify_stop();
+	//peac_notify_stop();
 	//Serial.printf("exit bindings...\n");
 	peac_bindings_exit();
 	//Serial.printf("bindings exited...\n");
@@ -93,34 +85,51 @@ void QuickjsEngine::close() {
 
 void QuickjsEngine::loop() {
 	jsvalQuickjsRunJobs();
-	Fs::getInstance()->tick();
 
 	if (gcTimer.tick()) {
 		jsvalQuickjsRunGc();
 	}
 
 	if (warningTimer.tick()) {
-		//scheduleRestart(false);
-		//Serial.printf("pin 4: %d\n",digitalRead(4));
-		/*if (!digitalRead(4))
-			scheduleRestart();*/
-
 		if (errorMessage!="")
 			Serial.printf("%s\n",errorMessage.c_str());
 	}
-
-	if (restartScheduled) {
-		restartScheduled=false;
-		close();
-		begin();
-	}
-}
-
-void QuickjsEngine::scheduleRestart(bool run) {
-	running=run;
-	restartScheduled=true;
 }
 
 void QuickjsEngine::gc() {
 	jsvalQuickjsRunGc();
+}
+
+extern "C" void peac_restart();
+
+extern const char boot_js[];
+QuickjsEngine engine(boot_js);
+
+extern "C" void scheduleRestart(bool run) {
+	engine.setRunning(run);
+	peac_restart();
+}
+
+extern "C" void gc() {
+	engine.gc();
+}
+
+extern "C" void quickjs_setup() {
+	engine.setup();
+}
+
+extern "C" void quickjs_start() {
+	engine.begin();
+}
+
+extern "C" void quickjs_run_script() {
+	engine.runBootScript();
+}
+
+extern "C" void quickjs_loop() {
+	engine.loop();
+}
+
+extern "C" void quickjs_stop() {
+	engine.close();
 }

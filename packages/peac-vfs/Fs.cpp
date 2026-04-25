@@ -1,4 +1,5 @@
 #include "Fs.h"
+#include "InfoRecord.h"
 
 FileHandle::FileHandle() {
 	/*Serial.printf("FileHandle constructor...\n");*/
@@ -217,4 +218,18 @@ std::shared_ptr<Fs> Fs::getInstance() {
 
 std::shared_ptr<Fs> Fs::createForTesting() {
 	return std::shared_ptr<Fs>(new Fs());
+}
+
+void fs_setup() {
+	InfoCollector::getInstance()->collectEvent.on([](std::shared_ptr<InfoRecord> record) {
+		record->setInt("openFiles",Fs::getInstance()->getNumOpenFiles());
+	});
+}
+
+void fs_stop() {
+	Fs::getInstance()->close();
+}
+
+void fs_loop() {
+	Fs::getInstance()->tick();
 }

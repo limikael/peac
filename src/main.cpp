@@ -1,28 +1,27 @@
 #include <Arduino.h>
 #include "QuickjsEngine.h"
 
-extern const char boot_js[];
 extern "C" void peac_notify_setup();
 extern "C" void peac_notify_loop();
+extern "C" void peac_notify_start();
+extern "C" void peac_notify_stop();
 
-QuickjsEngine engine(boot_js);
-
-extern "C" void scheduleRestart(bool run) {
-	engine.scheduleRestart(run);
-}
-
-extern "C" void gc() {
-	engine.gc();
+bool restartScheduled=false;
+extern "C" void peac_restart() {
+	restartScheduled=true;
 }
 
 void setup() {
-//	Serial.begin(115200);
 	peac_notify_setup();
-	engine.setup();
-	engine.begin();
+	peac_notify_start();
 }
 
 void loop() {
-	engine.loop();
+	if (restartScheduled) {
+		restartScheduled=false;
+		peac_notify_stop();
+		peac_notify_start();
+	}
+
 	peac_notify_loop();
 }

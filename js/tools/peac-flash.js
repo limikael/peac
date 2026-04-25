@@ -12,7 +12,7 @@ import {peacLoadHookChannel} from "./peac-commands.js";
 let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeacFlasher {
-    constructor({cwd, port}) {
+    constructor({cwd, port, dryRun}) {
         if (!port)
             throw new DeclaredError("No port specified.");
 
@@ -123,8 +123,8 @@ class PeacFlasher {
             extern "C" {
                 ${ev.setupFunctions.map(f=>`void ${f}();`).join("\n")}
                 ${ev.loopFunctions.map(f=>`void ${f}();`).join("\n")}
-                ${ev.startFunctions.map(f=>`void ${f}();`).join("\n")}
-                ${ev.stopFunctions.map(f=>`void ${f}();`).join("\n")}
+                ${ev.getStartFunctions().map(f=>`void ${f}();`).join("\n")}
+                ${ev.getStopFunctions().map(f=>`void ${f}();`).join("\n")}
 
                 void peac_notify_setup() {
                     ${ev.setupFunctions.map(f=>`${f}();`).join("\n")}
@@ -135,11 +135,11 @@ class PeacFlasher {
                 }
 
                 void peac_notify_start() {
-                    ${ev.startFunctions.map(f=>`${f}();`).join("\n")}
+                    ${ev.getStartFunctions().map(f=>`${f}();`).join("\n")}
                 }
 
                 void peac_notify_stop() {
-                    ${ev.stopFunctions.map(f=>`${f}();`).join("\n")}
+                    ${ev.getStopFunctions().map(f=>`${f}();`).join("\n")}
                 }
             }
         `);
@@ -148,14 +148,14 @@ class PeacFlasher {
     generateBootContent(ev) {
         let content=`
             ${ev.bootContent}
-            ${ev.bootFiles.map(f=>fs.readFileSync(f,"utf8")).join("\n")}
+            ${ev.getBootFiles().map(f=>fs.readFileSync(f,"utf8")).join("\n")}
         `;
 
         return `const char boot_js[]="${escapeCString(content)}";`;
     }
 }
 
-export async function peacFlash({cwd, port}) {
+export async function peacFlash({cwd, port, dryRun}) {
     let flasher=new PeacFlasher({cwd, port});
 
     let ev=await flasher.createBuildEvent();
@@ -177,5 +177,7 @@ export async function peacFlash({cwd, port}) {
     let peacMainSource=flasher.generatePeacMain(ev);
     fs.writeFileSync(path.join(flasher.targetPath,"peac_main.cpp"),peacMainSource);
 
-    await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
+    if (!dryRun) {
+        await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
+    }
 }

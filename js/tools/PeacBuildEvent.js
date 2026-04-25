@@ -14,8 +14,13 @@ export default class BuildEvent extends HookEvent {
         this.stopFunctions=[];
     }
 
-    addBootFile(bootFile) {
-        this.bootFiles.push(bootFile);
+    addBootFile(bootFile, {priority}={priority: 10}) {
+        this.bootFiles.sort((a,b)=>a.priority-b.priority);
+        this.bootFiles.push({pathname: bootFile, priority: priority});
+    }
+
+    getBootFiles() {
+        return this.bootFiles.map(f=>f.pathname);
     }
 
     addBinding(binding) {
@@ -38,11 +43,21 @@ export default class BuildEvent extends HookEvent {
         this.loopFunctions.push(f);
     }
 
-    addStartFunction(f) {
-        this.startFunctions.push(f);
+    addStartFunction(f, {priority}={priority: 10}) {
+        this.startFunctions.push({name: f, priority: priority});
     }
 
-    addStopFunction(f) {
-        this.stopFunctions.push(f);
+    getStartFunctions() {
+        this.startFunctions.sort((a,b)=>a.priority-b.priority);
+        return this.startFunctions.map(f=>f.name);
+    }
+
+    addStopFunction(f, {priority}={priority: 10}) {
+        this.stopFunctions.push({name: f, priority: priority});
+    }
+
+    getStopFunctions() {
+        this.stopFunctions.sort((a,b)=>b.priority-a.priority);
+        return this.stopFunctions.map(f=>f.name);
     }
 }

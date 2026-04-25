@@ -16,6 +16,7 @@ program
 program
     .command('flash')
     .description("Compile and flash firmware.")
+    .option("--dry-run","Just build, don't flash.")
     .action(withMergedOptions(peacFlash));
 
 program

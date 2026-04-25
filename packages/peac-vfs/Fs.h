@@ -82,3 +82,11 @@ private:
 	Fs() {}
 	std::vector<std::shared_ptr<FileHandlePair>> pairs;
 };
+
+extern "C" {
+
+void fs_stop();
+void fs_loop();
+void fs_setup();
+
+}

@@ -1,0 +1,14 @@
+import {dirnameFromImportMeta} from "../../js/utils/node-util.js";
+import path from "path";
+
+let __dirname=dirnameFromImportMeta(import.meta);
+
+export function build(ev) {
+	ev.addSource(__dirname);
+	ev.addIncludeDir(__dirname);
+	ev.addSetupFunction("quickjs_setup");
+	ev.addStartFunction("quickjs_start",{priority: 1});
+	ev.addStartFunction("quickjs_run_script",{priority: 15});
+	ev.addLoopFunction("quickjs_loop");
+	ev.addStopFunction("quickjs_stop",{priority: 1});
+}
