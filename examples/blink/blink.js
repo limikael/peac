@@ -5,5 +5,5 @@ waitFor(async ()=>{
 
 	setInterval(()=>{
 		digitalWrite(8,!digitalRead(8));
-	},1000);
+	},100);
 });

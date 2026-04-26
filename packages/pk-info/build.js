@@ -12,7 +12,7 @@ export function build(ev) {
     ev.addBootFile(path.join(__dirname,"boot.js"));
 }
 
-export async function peacInfo({cwd, port}) {
+export async function peakernelInfo({cwd, port}) {
     let device=await createDevice({port});
     let info=await device.getInfo();
     console.log(JSON.stringify(info,null,2));
@@ -24,5 +24,5 @@ export function cliConfig(ev) {
     ev.program
         .command('info')
         .description("Show runtime info.")
-        .mergedAction(peacInfo)
+        .mergedAction(peakernelInfo)
 }
