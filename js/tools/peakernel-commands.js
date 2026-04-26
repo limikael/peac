@@ -18,8 +18,9 @@ export async function peakernelLoadHookChannel({cwd}) {
         exportPath: "peakernel-project-hooks",
         extraModuleDirs: path.join(__dirname,"../../packages"),
         enableKey: "enablePlugins",
-        disableKey: "disablePlugins"
-    });    
+        disableKey: "disablePlugins",
+        defaultEnableKey: "peakernelDefaultEnable"
+    });
 }
 
 export async function peakernelMonitor({cwd, port}) {

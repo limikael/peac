@@ -1,0 +1,10 @@
+{
+	"name": "pk-espidf",
+	"description": "Build using ESP-IDF framework.",
+	"keywords": ["peakernel-plugin"],
+	"type": "module",
+	"exports": {
+		"./peakernel-project-hooks": "./build.js"
+	},
+	"peakernelDefaultEnable": false
+}

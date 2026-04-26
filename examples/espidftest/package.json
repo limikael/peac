@@ -1,0 +1,22 @@
+{
+  "name": "espidftest",
+  "type": "module",
+  "scripts": {
+    "flash": "peakernel flash"
+  },
+  "dependencies": {},
+  "disablePlugins": [
+    "pk-arduino",
+    "pk-gpio",
+    "pk-info",
+    "pk-littlefs",
+    "pk-quickjs",
+    "pk-repl",
+    "pk-runtime",
+    "pk-serial-console",
+    "pk-vfs"
+  ],
+  "enablePlugins": [
+    "pk-espidf"
+  ]
+}

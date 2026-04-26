@@ -13,6 +13,28 @@ export default class PeakernelBuildEvent extends HookEvent {
         this.startFunctions=[];
         this.stopFunctions=[];
         this.defines={};
+        this.buildFlags=[];
+        this.buildUnflags=[];
+        this.platformioIniItems={};
+    }
+
+    setBuildBackend(backend) {
+        if (this.buildBackend)
+            throw new DeclaredError("Build backend already set. Multiple build plugins?");
+
+        this.buildBackend=backend;
+    }
+
+    addBuildFlag(f) {
+        this.buildFlags.push(f);
+    }
+
+    addBuildUnflag(f) {
+        this.buildUnflags.push(f);
+    }
+
+    addPlatformioIniItem(key, value) {
+        this.platformioIniItems[key]=value
     }
 
     addDefine(key, value) {

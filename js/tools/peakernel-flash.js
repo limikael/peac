@@ -21,12 +21,7 @@ class PeakernelFlasher {
         this.targetPath=path.join(this.cwd,".target");
     }
 
-    generatePlatformioIni(ev) {
-        let port=this.port;
-        let includeDirs=ev.includeDirs;
-
-        //console.log(includeDirs);
-
+    createSrcExt(ev) {
         fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
 
         let sources=[];
@@ -49,15 +44,24 @@ class PeakernelFlasher {
 
         sources.push(path.join(this.targetPath,"src-ext"));
 
+        ev.sources=sources;
+    }
+
+    generatePlatformioIni(ev) {
+        let port=this.port;
+        let includeDirs=ev.includeDirs;
+
         return unindent(`
+            [platformio]
+            src_dir = main
             [env:peakernel]
-            platform = espressif32
             board = esp32-c3-devkitm-1
-            framework = arduino
-            build_unflags = -std=gnu++11  # remove the default
+            ${"\n"+Object.entries(ev.platformioIniItems).map(([k,v])=>`${" ".repeat(12)}${k} = ${v}`).join("\n")}
+            build_unflags = 
+                -std=gnu++11  # remove the default
+                ${"\n"+ev.buildUnflags.map(d=>`${" ".repeat(16)}${d}`).join("\n")}
             build_flags = 
-                -DARDUINO_USB_MODE=1
-                -DARDUINO_USB_CDC_ON_BOOT=1 
+                ${"\n"+ev.buildFlags.map(d=>`${" ".repeat(16)}${d}`).join("\n")}
                 -std=c++17
                 -DJS_STRICT_NAN_BOXING
                 -DJS_NO_REGEXP
@@ -71,10 +75,41 @@ class PeakernelFlasher {
             monitor_speed = 115200
             upload_port=${port}
             monitor_port=${port}
-            build_src_filter =
-                -<*>
-                ${"\n"+sources.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
         `+"\n");
+    }
+
+    generateTopCMake(ev) {
+        return unindent(`
+            cmake_minimum_required(VERSION 3.16)
+            include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+            project(peakernel)            
+        `);
+    }
+
+    generateProjectCMake(ev) {
+        let sources=[];
+        for (let source of ev.sources) {
+            let stats=fs.statSync(source);
+
+            if (stats.isFile()) {
+                sources.push(source);
+            }
+
+            else {
+                for (let entry of fs.readdirSync(source))
+                    if (entry.endsWith(".c") || entry.endsWith(".cpp"))
+                        sources.push(path.join(source,entry));
+            }
+        }
+
+        return autoIndent(`
+            idf_component_register(
+                SRCS
+                    ${sources.map(d=>`"${d}"\n`).join("\n")}
+                INCLUDE_DIRS
+                    ${ev.includeDirs.map(d=>`"${d}"\n`).join("\n")}
+            )
+        `);
     }
 
     async createBuildEvent() {
@@ -86,6 +121,7 @@ class PeakernelFlasher {
         ev.addSource(path.join(__dirname,"../../src"));
         ev.addSource(this.targetPath);
 
+        // this should go into the quickjs module!!! 
         ev.addIncludeDir(peabindGetLibConf("includeDir"));
         ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
         ev.addSource(path.join(__dirname,"../../vendor/quickjs"));
@@ -100,15 +136,6 @@ class PeakernelFlasher {
             filenameOrObject=JSON5.parse(fs.readFileSync(filenameOrObject));
 
         return filenameOrObject;
-    }
-
-    makeRelativeIfFile(fileOrDir) {
-        return fileOrDir;
-
-        if (fs.statSync(fileOrDir).isDirectory())
-            return fileOrDir;
-
-        return path.relative(this.targetPath,fileOrDir);
     }
 
     generatePeakernelMain(ev) {
@@ -152,14 +179,34 @@ export async function peakernelFlash({cwd, port, dryRun}) {
     let flasher=new PeakernelFlasher({cwd, port});
 
     let ev=await flasher.createBuildEvent();
+    if (!ev.buildBackend)
+        throw new DeclaredError("No build plugin!");
+
     fs.mkdirSync(flasher.targetPath,{recursive: true});
 
+    // this should go into the quickjs module!!! 
     await peabind({
         idl: peabindMerge(ev.bindings.map(b=>flasher.loadJsonIfFilename(b))),
         target: "quickjs",
         output: path.join(flasher.targetPath,"pk_bindings.cpp"),
         prefix: "pk_bindings_"
     });
+
+    if (ev.buildBackend=="cmake") {
+        fs.mkdirSync(path.join(flasher.targetPath,"main"),{recursive: true});
+
+        let topCmake=flasher.generateTopCMake();
+        fs.writeFileSync(path.join(flasher.targetPath,"CMakeLists.txt"),topCmake);
+
+        let projectCmake=flasher.generateProjectCMake(ev);
+        fs.writeFileSync(path.join(flasher.targetPath,"main","CMakeLists.txt"),projectCmake);
+    }
+
+    console.log("back: "+ev.buildBackend);
+    if (ev.buildBackend=="platformio") {
+        console.log("*************");
+        await flasher.createSrcExt(ev);
+    }
 
     let boot=flasher.generateBootContent(ev);
     fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);

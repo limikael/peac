@@ -1,297 +1,312 @@
-# PEAC System
+# 🧠 peakernel
 
-PEAC is a modular firmware composition and execution platform for embedded and runtime systems.
-
-It combines:
-- JavaScript for high-level behavior
-- C++ for hardware and native capabilities
-- A minimal runtime (PEAC) for orchestration
-- A plugin system based on hooks and events
+> A plugin-based OS kernel for embedded devices, where JavaScript is the application layer.
 
 ---
 
-# Core Idea
+## 🚀 Overview
 
-Build firmware once, iterate behavior continuously.
+peakernel is a system for building programmable embedded devices where:
 
-PEAC separates:
-- Slow system construction (C++, firmware build)
-- Fast iteration (JavaScript deployment)
+* **JavaScript is the application**
+* **C++ plugins provide capabilities**
+* **The kernel is composed at build time**
 
-Commands:
+It is designed for building real hardware systems:
 
-- peac flash → rebuild firmware (C++ + bindings)
-- peac deploy → update JavaScript only
-
----
-
-# Architecture
-
-JavaScript (user logic)
-→ QuickJS (embedded runtime)
-→ peabind (binding generator)
-→ C++ plugins (hardware logic)
-→ PlatformIO / ESP-IDF / Arduino
-→ Hardware (ESP32 and similar devices)
+* sensors
+* displays
+* controllers
+* distributed devices
 
 ---
 
-# Components
+## 🎯 Core Idea
 
-## peac (Runtime Platform)
+> Build the kernel once, iterate on behavior in JavaScript.
 
-PEAC is the runtime system that:
-- Executes JavaScript on embedded devices
-- Hosts plugin execution via hook-channel
-- Manages lifecycle and event loop
-- Selects JS engine (e.g. QuickJS)
+peakernel separates:
+
+* **Slow path** → compiling firmware (C++)
+* **Fast path** → updating application logic (JS)
+
+```bash
+peakernel flash   # rebuild kernel (plugins + firmware)
+peakernel deploy  # update JavaScript only
+```
+
+---
+
+## 🧠 Mental Model
+
+> You are writing an application that runs on a tiny OS, directly connected to hardware.
+
+* JavaScript is the **application layer**
+* The system is **event-driven**
+* Hardware is exposed through **plugins**
+
+This is not:
+
+* a scripting layer
+* a configuration system
+
+👉 **JS is the program**
+
+---
+
+## 🧩 Architecture
+
+```
+JavaScript (application)
+        ↓
+Event system (unified)
+        ↓
+Bindings + VFS
+        ↓
+C++ plugins
+        ↓
+Hardware / SDK (Arduino, ESP-IDF, etc.)
+```
+
+---
+
+## 🔌 Plugin System
+
+All functionality comes from plugins.
+
+Examples:
+
+* `pk-gpio` → GPIO control
+* `pk-vfs` → virtual file system
+* `pk-quickjs` → JavaScript engine
+* `pk-runtime` → timers + event loop
+* `pk-arduino` / `pk-espidf` → platform integration
+
+---
+
+### ⚠️ Important: Build-Time Only
+
+> Plugins are **compiled into the kernel**.
+> They are **not loaded dynamically at runtime**.
+
+To change functionality:
+
+```bash
+pnpm add pk-some-plugin
+peakernel flash
+```
+
+There is:
+
+* no runtime module loading
+* no dynamic drivers
+* no hot-plug plugins
+
+👉 The firmware *is* the system.
+
+---
+
+## 📦 Project Setup
+
+```bash
+peakernel init
+pnpm add pk-gpio pk-vfs pk-quickjs
+peakernel flash
+```
+
+The package manager acts as the **kernel configuration system**.
+
+---
+
+## ⚙️ Kernel Design
+
+The kernel itself is extremely small.
+
+```cpp
+void peakernel_setup() {
+    peakernel_notify_setup();
+    peakernel_notify_start();
+}
+
+void peakernel_loop() {
+    peakernel_notify_loop();
+}
+```
+
+Plugins inject lifecycle functions at build time:
+
+```cpp
+void peakernel_notify_loop() {
+    runtime_loop();
+    gpio_loop();
+    quickjs_loop();
+    fs_loop();
+}
+```
+
+👉 The system is **statically composed**, not dynamically orchestrated.
+
+---
+
+## 🔄 Execution Model
+
+* Native (C++) code drives the system loop
+* Plugins handle:
+
+  * hardware
+  * timing
+  * IO
+* JavaScript runs **only in response to events**
+
+There is:
+
+* ❌ no `tick()` in JS
+* ✅ event-driven execution
+
+---
+
+## 📡 Unified Event System
+
+All events—regardless of origin—use the same interface:
+
+```js
+obj.on("event", handler);
+obj.off("event", handler);
+```
+
+Events can come from:
+
+* hardware (GPIO, etc.)
+* VFS streams
+* native objects (via bindings)
+
+---
+
+## 📁 Virtual File System (VFS)
+
+All stream-based IO is exposed via a VFS.
 
 Example:
 
-peac deploy --engine=quickjs
-peac flash
+```js
+let console = await open("/dev/console");
+
+console.on("data", chunk => {
+  console.log(chunk);
+});
+
+console.write("hello");
+```
+
+> Everything that behaves like a stream can live in the VFS.
 
 ---
 
-## peabind (Binding Layer)
+## 🔗 Native Bindings (peabind)
 
-peabind connects JavaScript and C++.
-
-It:
-- Parses IDL definitions
-- Generates C++/JS glue code
-- Hides engine-specific APIs
-- Produces engine-agnostic plugins
-
-Key idea:
-Plugins do not depend on the JS engine.
-
----
-
-## hook-channel (Plugin System)
-
-A minimal hook-based execution system.
-
-Core API:
-
-await channel.dispatch("eventName", event)
-
-Features:
-- Plugins register functions per hook name
-- Ordered execution
-- Shared mutable event object
-
-Example plugin:
-
-export function build(ev) {
-  ev.messages.push("hello");
-}
-
-Execution modes:
-- Async: channel.dispatch(...)
-- Sync: channel.dispatchSync(...)
-
----
-
-## peabrain (Application Layer)
-
-peabrain is a machine control application built on PEAC.
-
-It:
-- Controls machines
-- Uses plugins and bindings
-- Runs user-defined automation logic
+Plugins can expose direct APIs to JavaScript via bindings.
 
 Example:
 
-let motor = masterDevice.getRemoteDevice(123, { profile: MOTR_PROFILE });
-motor.targetPosition = 1000;
+```js
+pinMode(8, "output");
+digitalWrite(8, 1);
+
+pin(8).on("change", v => {
+  console.log(v);
+});
+```
+
+Bindings support:
+
+* functions
+* classes
+* events
 
 ---
 
-## canopener (CANopen Stack)
+## 🧠 Two Exposure Models
 
-C++ CANopen implementation.
+Plugins expose functionality in two ways:
 
-It:
-- Runs standalone or as PEAC plugin
-- Controls industrial devices
-- Supports motors and distributed systems
+### 1. VFS (streams)
 
----
+* for continuous IO
+* event-driven
 
-# Plugin System
+### 2. Bindings (functions + objects)
 
-Plugins are standard Node modules.
+* for control / RPC-style APIs
 
-Discovered from:
-- package.json dependencies
-- extraModuleDirs
-
-Filtered by keywords and exports.
+> Plugins choose the most natural abstraction.
 
 ---
 
-## Plugin Example
+## 🔁 Lifecycle
 
-{
-  "keywords": ["peac-plugin"],
-  "exports": {
-    "./main": "./plugin.js"
-  }
-}
+Plugins hook into the kernel lifecycle:
 
----
+* `setup`
+* `start`
+* `loop`
+* `stop`
 
-## Plugin Code
-
-export function init(ev) {}
-
-export function tick(ev) {}
-
-export function build(ev) {
-  ev.files.push("output.cpp");
-}
+These are composed into a single executable at build time.
 
 ---
 
-# Hook Model
+## 🧪 Example
 
-Single primitive:
+```js
+pinMode(8, "output");
 
-channel.dispatch("hookName", event)
-
-Design:
-- Shared event object
-- Ordered execution
-- Deterministic behavior
-
-Patterns:
-
-Side effect:
-ev.files.push(...)
-
-Accumulation:
-ev.config.value = 42
+setInterval(() => {
+  digitalWrite(8, 1);
+  setTimeout(() => digitalWrite(8, 0), 100);
+}, 1000);
+```
 
 ---
 
-# Build System (peac flash)
+## 🧭 Design Principles
 
-Pipeline:
+### 1. JavaScript is the application
 
-1. Discover plugins
-2. Collect IDLs + sources
-3. Merge IDLs
-4. Generate bindings (peabind)
-5. Generate PlatformIO project
-6. Compile firmware
-
-Output:
-
-.target/
-  platformio.ini
-  src/
-  bindings.cpp
-  main.cpp
+Not configuration. Not scripting. The actual program.
 
 ---
 
-# Deployment (peac deploy)
+### 2. Build-time composition
 
-Fast iteration without firmware rebuild.
-
-Flow:
-- Upload JavaScript to device storage
-- Device reloads runtime
-- QuickJS executes script
-
-Example:
-
-upload main.js → /main.js
-reboot device
-
-Runtime:
-
-JS_Eval(ctx, script, ...)
+The system is defined by installed plugins.
 
 ---
 
-# Object Model (peabind)
+### 3. Minimal kernel
 
-Cross-language ownership model:
-
-JS object → handle (int) → C++ registry → shared_ptr
-
-Rules:
-- C++ owns lifetime via shared_ptr
-- JS holds opaque handles
-- GC triggers cleanup via FinalizationRegistry
-
-Guarantees:
-- No dangling pointers
-- No double free
-- Stable identity mapping
+The kernel only orchestrates lifecycle.
 
 ---
 
-# Event Loop
+### 4. Unified event model
 
-Runs inside embedded firmware loop:
-
-void loop() {
-  processTimers();
-  runJS();
-}
-
-Supports:
-- setTimeout
-- setInterval
-- async tasks
+Same `.on()` interface everywhere.
 
 ---
 
-# PlatformIO Integration
+### 5. Multiple abstraction styles
 
-Generated project:
-
-[env:esp32dev]
-platform = espressif32
-board = esp32dev
-framework = arduino
+* streams (VFS)
+* direct APIs (bindings)
 
 ---
 
-# Design Principles
+### 6. Hardware-first
 
-## 1. Separation of concerns
-- peac = runtime
-- peabind = binding layer
-- plugins = functionality
-- PlatformIO = build system
-
-## 2. Minimal primitives
-- hooks
-- events
-- bindings
-
-## 3. Deterministic execution
-- explicit discovery
-- ordered execution
-
-## 4. Engine independence
-- plugins are engine-agnostic
-
-## 5. Fast iteration
-- firmware rarely changes
-- JS changes frequently
+Designed for real devices, not just software environments.
 
 ---
 
-# Summary
+## 🧭 One-line Summary
 
-PEAC is a modular embedded runtime where:
-- JavaScript controls behavior
-- C++ provides hardware capabilities
-- Plugins extend the system via hooks
-- A minimal runtime orchestrates everything
+> peakernel is a build-time composed embedded OS kernel where JavaScript applications control hardware through native plugins and a unified event-driven model.
