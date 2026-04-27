@@ -7,6 +7,7 @@ import {SerialDeviceConnection, createSerialDeviceConnection} from "../device/Se
 import {proxyComposeFb} from "../utils/proxy-compose.js";
 import fs, {promises as fsp} from "fs";
 import {DeclaredError} from "../utils/js-util.js";
+import {pioStringify} from "../utils/pio-util.js";
 import {loadHookChannel, HookEvent} from "hook-channel";
 
 let __dirname=dirnameFromImportMeta(import.meta);
@@ -50,6 +51,16 @@ export async function peakernelInit({cwd}) {
     }
 
     fs.writeFileSync(path.join(cwd,"package.json"),JSON.stringify(pkg,null,2));
+
+    let ini={
+        ["env:"+path.basename(cwd)]: {
+            "platform": "espressif32",
+            "framework": "arduino",
+            "board": "esp32-c3-devkitm-1"
+        }
+    }
+
+    fs.writeFileSync(path.join(cwd,"platformio.ini"),pioStringify(ini));
 }
 
 export async function peakernelCat({cwd, port, args}) {

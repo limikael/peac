@@ -1,3 +1,5 @@
+import {arrayify} from "./js-util.js";
+
 export function pioParse(s) {
 	let currentSection, currentKey;
 	let res={};
@@ -42,6 +44,47 @@ export function pioParse(s) {
 	return res;
 }
 
-export function pioStringify(p) {
-	
+export function pioStringify(sections) {
+    function generateItem(name, value) {
+        if (Array.isArray(value))
+            return `${name}=\n${value.map(v=>`  ${v}`).join("\n")}\n`;
+
+        return `${name}=${value}\n`;
+    }
+
+    function generateSection(name, items) {
+        let content=`[${name}]\n`;
+        for (let itemName in items)
+            content+=generateItem(itemName,items[itemName]);
+
+        return content;
+    }
+
+    let content="";
+    for (let name in sections)
+        content+=generateSection(name,sections[name]);
+
+    return content;
+}
+
+export function pioGetEnvNames(pio) {
+	let names=[];
+
+	for (let k in pio)
+		if (k.startsWith("env:"))
+			names.push(k.slice(k.indexOf(":")+1));
+
+	return names;
+}
+
+export function pioGetEnv(pio, envName) {
+	for (let k in pio)
+		if (k=="env:"+envName)
+			return pio[k];
+}
+
+export function pioEnvNormalize(env) {
+	env.build_flags=arrayify(env.build_flags);
+	env.build_unflags=arrayify(env.build_unflags);
+	return env;
 }

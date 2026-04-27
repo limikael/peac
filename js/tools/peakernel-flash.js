@@ -8,7 +8,7 @@ import {escapeCString, unindent, autoIndent} from "../utils/lang-util.js";
 import JSON5 from "json5";
 import PeakernelBuildEvent from "./PeakernelBuildEvent.js";
 import {peakernelLoadHookChannel} from "./peakernel-commands.js";
-import {parse as iniParse} from "ini";
+import {pioParse, pioStringify, pioGetEnvNames, pioGetEnv, pioEnvNormalize} from "../utils/pio-util.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
@@ -23,12 +23,7 @@ class PeakernelFlasher {
         this.dryRun=dryRun;
     }
 
-    generatePlatformioIni(ev) {
-        let port=this.port;
-        let includeDirs=ev.includeDirs;
-
-        //console.log(includeDirs);
-
+    generateSrcExt(ev) {
         fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
 
         let sources=[];
@@ -51,32 +46,55 @@ class PeakernelFlasher {
 
         sources.push(path.join(this.targetPath,"src-ext"));
 
-        return unindent(`
-            [env:peakernel]
-            platform = espressif32
-            board = esp32-c3-devkitm-1
-            framework = arduino
-            build_unflags = -std=gnu++11  # remove the default
-            build_flags = 
-                -DARDUINO_USB_MODE=1
-                -DARDUINO_USB_CDC_ON_BOOT=1 
-                -std=c++17
-                -DJS_STRICT_NAN_BOXING
-                -DJS_NO_REGEXP
-                -DJS_NO_MODULE_LOADER
-                -DJS_NO_OS
-                -DCONFIG_VERSION=\\"embedded\\"
-                -DEMSCRIPTEN
-                -DJSVAL_TARGET_QUICKJS
-                ${"\n"+includeDirs.map(d=>`${" ".repeat(16)}-I${d}`).join("\n")}
-                ${"\n"+Object.entries(ev.defines).map(([k,v])=>`${" ".repeat(16)}-D${k}=${v?v:""}`).join("\n")}
-            monitor_speed = 115200
-            upload_port=${port}
-            monitor_port=${port}
-            build_src_filter =
-                -<*>
-                ${"\n"+sources.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
-        `+"\n");
+        ev.sources=sources;
+    }
+
+    generatePlatformioIni(ev) {
+        let ini=pioParse(fs.readFileSync(path.join(this.cwd,"platformio.ini"),"utf8"));
+        if (pioGetEnvNames(ini).length!=1)
+            throw new Error("Expectd exactly one env in platformio.ini");
+
+        let env=pioEnvNormalize(pioGetEnv(ini,pioGetEnvNames(ini)[0]));
+        env.upload_port=this.port;
+        env.monitor_port=this.port;
+        env.monitor_speed=115200;
+        env.build_unflags.push("-std=gnu++11");
+        env.build_flags.push(...[
+            "-std=c++17",
+            "-DJS_STRICT_NAN_BOXING",
+            "-DJS_NO_REGEXP",
+            "-DJS_NO_MODULE_LOADER",
+            "-DJS_NO_OS",
+            `-DCONFIG_VERSION=\\"embedded\\"`,
+            "-DEMSCRIPTEN",
+            "-DJSVAL_TARGET_QUICKJS",
+            ...ev.includeDirs.map(d=>`-I${d}`),
+            ...Object.entries(ev.defines).map(([k,v])=>`-D${k}${v?"="+v:""}`),
+        ]);
+
+        if (env.build_src_filter)
+            throw new DeclaredError("Don't specify build_src_filter");
+
+        switch (env.framework) {
+            case "arduino":
+                ev.addSource(path.join(__dirname,"../../src/main-arduino.cpp"));
+                this.generateSrcExt(ev);
+                env.build_src_filter=[
+                    "-<*>",
+                    ...ev.sources.map(s=>`+<${s}>`)
+                ];
+                env.build_flags.push(...[
+                    "-DARDUINO_USB_MODE=1",
+                    "-DARDUINO_USB_CDC_ON_BOOT=1"
+                ]);
+                break;
+
+            default:
+                throw new DeclaredError("Unknown framework: "+env.framework);
+        }
+
+        let iniContent=pioStringify(ini);
+        fs.writeFileSync(path.join(this.targetPath,"platformio.ini"),iniContent);
     }
 
     async createBuildEvent() {
@@ -85,8 +103,8 @@ class PeakernelFlasher {
 
         ev.addIncludeDir(this.targetPath);
         ev.addIncludeDir(path.join(__dirname,"../../src"));
-        ev.addSource(path.join(__dirname,"../../src"));
         ev.addSource(this.targetPath);
+        ev.addSource(path.join(__dirname,"../../src/peakernel.cpp"));
 
         ev.addIncludeDir(peabindGetLibConf("includeDir"));
         ev.addIncludeDir(path.join(__dirname,"../../vendor/quickjs"));
@@ -152,7 +170,7 @@ class PeakernelFlasher {
 
 export async function peakernelFlash({cwd, port, dryRun}) {
     cwd=packageDirname(cwd);
-    console.log("cwd: "+cwd);
+    //console.log("cwd: "+cwd);
 
     let flasher=new PeakernelFlasher({cwd, port, dryRun});
     let ev=await flasher.createBuildEvent();
@@ -160,10 +178,7 @@ export async function peakernelFlash({cwd, port, dryRun}) {
     if (!fs.existsSync(path.join(cwd,"platformio.ini")))
         throw new DeclaredError("No platformio.ini");
 
-    let ini=iniParse(fs.readFileSync(path.join(cwd,"platformio.ini"),"utf8"));
-    console.log(ini);
-
-    /*fs.mkdirSync(flasher.targetPath,{recursive: true});
+    fs.mkdirSync(flasher.targetPath,{recursive: true});
 
     await peabind({
         idl: peabindMerge(ev.bindings.map(b=>flasher.loadJsonIfFilename(b))),
@@ -175,13 +190,12 @@ export async function peakernelFlash({cwd, port, dryRun}) {
     let boot=flasher.generateBootContent(ev);
     fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);
 
-    let iniSource=flasher.generatePlatformioIni(ev);
-    fs.writeFileSync(path.join(flasher.targetPath,"platformio.ini"),iniSource);
-
     let peakernelMainSource=flasher.generatePeakernelMain(ev);
     fs.writeFileSync(path.join(flasher.targetPath,"peakernel_main.cpp"),peakernelMainSource);
 
+    await flasher.generatePlatformioIni(ev);
+
     if (!dryRun) {
         await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
-    }*/
+    }
 }
