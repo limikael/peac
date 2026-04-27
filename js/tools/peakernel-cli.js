@@ -28,6 +28,8 @@ program
 program
     .command('flash')
     .description("Compile and flash firmware.")
+    .argument('[file]', 'Main file.')
+    .addOption(new Option("-m, --main <file>","Main file.").env("PEAC_MAIN"))
     .option("--dry-run","Just build, don't flash.")
     .action(withMergedOptions(peakernelFlash));
 

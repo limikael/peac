@@ -12,6 +12,44 @@ import {pioParse, pioStringify, pioGetEnvNames, pioGetEnv, pioEnvNormalize} from
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
+/*
+    generateCmake() {
+        let topCmakeContent=unindent(`
+            cmake_minimum_required(VERSION 3.16)
+            include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+            project(peakernel)            
+        `);
+        fs.writeFileSync(path.join(this.targetPath,"CMakeLists.txt"),topCmakeContent);
+
+        fs.mkdirSync(path.join(this.targetPath,"main"),{recursive: true});
+        let sources=[];
+        for (let source of this.sources) {
+            let stats=fs.statSync(source);
+
+            if (stats.isFile()) {
+                sources.push(source);
+            }
+
+            else {
+                for (let entry of fs.readdirSync(source))
+                    if (entry.endsWith(".c") || entry.endsWith(".cpp"))
+                        sources.push(path.join(source,entry));
+            }
+        }
+
+        let projectCmakeContent=autoIndent(`
+            idf_component_register(
+                SRCS
+                    ${sources.map(d=>`"${d}"\n`).join("\n")}
+                INCLUDE_DIRS
+                    ${this.includeDirs.map(d=>`"${d}"\n`).join("\n")}
+            )
+        `);
+
+        fs.writeFileSync(path.join(this.targetPath,"main","CMakeLists.txt"),projectCmakeContent);
+    }
+*/
+
 class PeakernelFlasher {
     constructor({cwd, port, dryRun}) {
         if (!port)
@@ -158,19 +196,29 @@ class PeakernelFlasher {
         `);
     }
 
-    generateBootContent(ev) {
+    generateBootContent(ev, main) {
+        let mainContent="";
+        if (main)
+            mainContent=`globalThis.bootFunction=()=>{${fs.readFileSync(main,"utf8")}};`;
+
         let content=`
             ${ev.bootContent}
             ${ev.getBootFiles().map(f=>fs.readFileSync(f,"utf8")).join("\n")}
+            ${mainContent}
         `;
 
         return `const char boot_js[]="${escapeCString(content)}";`;
     }
 }
 
-export async function peakernelFlash({cwd, port, dryRun}) {
+export async function peakernelFlash({cwd, port, dryRun, args, main}) {
     cwd=packageDirname(cwd);
-    //console.log("cwd: "+cwd);
+
+    if (args[0])
+        main=args[0];
+
+    else if (main)
+        main=path.resolve(cwd,main);
 
     let flasher=new PeakernelFlasher({cwd, port, dryRun});
     let ev=await flasher.createBuildEvent();
@@ -187,7 +235,11 @@ export async function peakernelFlash({cwd, port, dryRun}) {
         prefix: "pk_bindings_"
     });
 
-    let boot=flasher.generateBootContent(ev);
+    let bootFile;
+    if (!ev.externalBootFile)
+        bootFile=main;
+
+    let boot=flasher.generateBootContent(ev,bootFile);
     fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);
 
     let peakernelMainSource=flasher.generatePeakernelMain(ev);

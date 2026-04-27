@@ -18,6 +18,7 @@
 		"decodeBase64": {"args": ["string"], "return": "buffer"},
 		"encodeAscii": {"args": ["string"], "return": "buffer"},
 		"decodeAscii": {"args": ["buffer"], "return": "string"},
+		"serialWriteString": {"args": ["string"]}
 	}
 }
 

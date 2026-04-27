@@ -1,13 +1,17 @@
 #include <Arduino.h>
 #include "runtime.h"
 #include "Timer.h"
-#include "Fs.h"
+//#include "Fs.h"
 #include "SoftTimer.h"
 #include <cassert>
 #include "encoding.h"
 
+void serialWriteString(std::string s) {
+    Serial.println(s.c_str());
+}
+
 void runtime_setup() {
-    Fs::getInstance()->openEvent.on([](std::shared_ptr<OpenEvent> ev) {
+    /*Fs::getInstance()->openEvent.on([](std::shared_ptr<OpenEvent> ev) {
         if (ev->getMode()!="r" || ev->getPathname()!="/hello")
             return;
 
@@ -31,7 +35,7 @@ void runtime_setup() {
 
         f->write(encodeAscii("hello world"));
         f->close();
-    });
+    });*/
 }
 
 void runtime_start() {

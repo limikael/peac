@@ -18,15 +18,49 @@ function clearInterval(id) {
 	clearTimer(id);
 }
 
-globalThis.fs=Fs.getInstance();
+if (globalThis.Fs) {
+	globalThis.fs=Fs.getInstance();
 
-let devConsole=fs.open("/dev/console","doesn't matter");
-console={};
-console.log=s=>{
-	let bytes=encodeAscii(s+"\n");
-    if (devConsole)
-    	devConsole.write(bytes);
+	let devConsole=fs.open("/dev/console","doesn't matter");
+	globalThis.console={};
+	globalThis.console.log=s=>{
+		let bytes=encodeAscii(s+"\n");
+	    if (devConsole)
+	    	devConsole.write(bytes);
+	}
 }
 
-/*console={};
-console.log=s=>{};*/
+else {
+	globalThis.console={};
+	globalThis.console.log=serialWriteString;
+}
+
+globalThis.bootPromise=new Promise((res,rej)=>{
+	globalThis.bootPromiseResolve=res;
+	globalThis.bootPromiseReject=rej;
+});
+
+function waitFor(bootWaitFor) {
+	globalThis.bootWaitFor=bootWaitFor;
+}
+
+async function boot() {
+	if (globalThis.bootFunction)
+		globalThis.bootFunction();
+
+	else {
+		let bootContent=decodeAscii(await readFile("/boot.js"));
+		eval(bootContent);
+	}
+
+	if (typeof globalThis.bootWaitFor=="function") {
+		globalThis.bootWaitFor=globalThis.bootWaitFor();
+	}
+
+	await globalThis.bootWaitFor;
+	globalThis.bootPromiseResolve();
+}
+
+async function awaitBoot() {
+	await bootPromise;
+}

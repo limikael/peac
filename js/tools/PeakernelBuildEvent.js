@@ -13,6 +13,11 @@ export default class PeakernelBuildEvent extends HookEvent {
         this.startFunctions=[];
         this.stopFunctions=[];
         this.defines={};
+        this.externalBootFile=false;
+    }
+
+    setExternalBootFile(v) {
+        this.externalBootFile=true;
     }
 
     addDefine(key, value) {
