@@ -8,118 +8,19 @@ import {escapeCString, unindent, autoIndent, createIniContent} from "../utils/la
 import JSON5 from "json5";
 import PeakernelBuildEvent from "./PeakernelBuildEvent.js";
 import {peakernelLoadHookChannel} from "./peakernel-commands.js";
+import {platformioBuild} from "./PlatformioBuild.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeakernelFlasher {
-    constructor({cwd, port, dryRun}) {
+    constructor({cwd, port, dryRun, projectName}) {
         if (!port)
             throw new DeclaredError("No port specified.");
 
         this.port=port;
         this.cwd=packageDirname(cwd);
         this.targetPath=path.join(this.cwd,".target");
-    }
-
-    createSrcExt(ev) {
-        fs.mkdirSync(path.join(this.targetPath,"src-ext"),{recursive: true});
-
-        let sources=[];
-        for (let source of ev.sources) {
-            let stats=fs.statSync(source);
-
-            if (stats.isFile()) {
-                let name=path.basename(source);
-                let linkToName=path.join(this.targetPath,"src-ext",name);
-                if (!fs.existsSync(linkToName))
-                    fs.symlinkSync(source,linkToName);
-
-                sources.push(linkToName);
-            }
-
-            else {
-                sources.push(source);
-            }
-        }
-
-        sources.push(path.join(this.targetPath,"src-ext"));
-
-        ev.sources=sources;
-    }
-
-    generatePlatformioIni(ev) {
-        let platformioIni={
-            platformio: {
-                src_dir: "main"
-            },
-            "env:peakernel": {
-                ...ev.platformioIniItems,
-                board: "esp32-c3-devkitm-1",
-                build_unflags: [
-                    "-std=gnu++11",
-                    ...ev.buildUnflags
-                ],
-                build_flags: [
-                    "-std=c++17",
-                    "-DJS_STRICT_NAN_BOXING",
-                    "-DJS_NO_REGEXP",
-                    "-DJS_NO_MODULE_LOADER",
-                    "-DJS_NO_OS",
-                    `-DCONFIG_VERSION=\\"embedded\\"`,
-                    "-DEMSCRIPTEN",
-                    "-DJSVAL_TARGET_QUICKJS",
-                    ...ev.buildFlags,
-                    ...ev.includeDirs.map(i=>`-I${i}`),
-                    ...Object.entries(ev.defines).map(([k,v])=>v?`-D${k}=${v}`:`-D${k}`)
-                ],
-                monitor_speed: 115200,
-                upload_port: this.port,
-                monitor_port: this.port,
-            }
-        };
-
-        if (ev.buildBackend!="cmake") {
-            platformioIni["env:peakernel"].build_src_filter=[
-                "-<*>",
-                ...ev.sources.map(d=>`+<${d}>`),
-            ];
-        }
-
-        return createIniContent(platformioIni);
-    }
-
-    generateTopCMake(ev) {
-        return unindent(`
-            cmake_minimum_required(VERSION 3.16)
-            include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-            project(peakernel)            
-        `);
-    }
-
-    generateProjectCMake(ev) {
-        let sources=[];
-        for (let source of ev.sources) {
-            let stats=fs.statSync(source);
-
-            if (stats.isFile()) {
-                sources.push(source);
-            }
-
-            else {
-                for (let entry of fs.readdirSync(source))
-                    if (entry.endsWith(".c") || entry.endsWith(".cpp"))
-                        sources.push(path.join(source,entry));
-            }
-        }
-
-        return autoIndent(`
-            idf_component_register(
-                SRCS
-                    ${sources.map(d=>`"${d}"\n`).join("\n")}
-                INCLUDE_DIRS
-                    ${ev.includeDirs.map(d=>`"${d}"\n`).join("\n")}
-            )
-        `);
+        this.projectName=projectName;
     }
 
     async createBuildEvent() {
@@ -183,49 +84,59 @@ class PeakernelFlasher {
 
         return `const char boot_js[]="${escapeCString(content)}";`;
     }
+
+    async run() {
+        fs.mkdirSync(this.targetPath,{recursive: true});
+
+        let ev=await this.createBuildEvent();
+
+        // this should go into the quickjs module!!! 
+        await peabind({
+            idl: peabindMerge(ev.bindings.map(b=>this.loadJsonIfFilename(b))),
+            target: "quickjs",
+            output: path.join(this.targetPath,"pk_bindings.cpp"),
+            prefix: "pk_bindings_"
+        });
+
+        let boot=this.generateBootContent(ev);
+        fs.writeFileSync(path.join(this.targetPath,"boot_js.c"),boot);
+
+        let peakernelMainSource=this.generatePeakernelMain(ev);
+        fs.writeFileSync(path.join(this.targetPath,"peakernel_main.cpp"),peakernelMainSource);
+
+        await platformioBuild({
+            dryRun: this.dryRun,
+            cmake: ev.cmake,
+            projectName: this.projectName,
+            targetPath: this.targetPath,
+            config: {
+                ...ev.platformioIniItems,
+                board: "esp32-c3-devkitm-1",
+            },
+            buildUnflags: [
+                "-std=gnu++11",
+                ...ev.buildUnflags
+            ],
+            buildFlags: [
+                "-std=c++17",
+                "-DJS_STRICT_NAN_BOXING",
+                "-DJS_NO_REGEXP",
+                "-DJS_NO_MODULE_LOADER",
+                "-DJS_NO_OS",
+                `-DCONFIG_VERSION=\\"embedded\\"`,
+                "-DEMSCRIPTEN",
+                "-DJSVAL_TARGET_QUICKJS",
+                ...ev.buildFlags
+            ],
+            includeDirs: ev.includeDirs,
+            sources: ev.sources
+        });
+    }
 }
 
 export async function peakernelFlash({cwd, port, dryRun}) {
-    let flasher=new PeakernelFlasher({cwd, port});
-
-    let ev=await flasher.createBuildEvent();
-    if (!ev.buildBackend)
-        throw new DeclaredError("No build plugin!");
-
-    fs.mkdirSync(flasher.targetPath,{recursive: true});
-
-    // this should go into the quickjs module!!! 
-    await peabind({
-        idl: peabindMerge(ev.bindings.map(b=>flasher.loadJsonIfFilename(b))),
-        target: "quickjs",
-        output: path.join(flasher.targetPath,"pk_bindings.cpp"),
-        prefix: "pk_bindings_"
-    });
-
-    if (ev.buildBackend=="cmake") {
-        fs.mkdirSync(path.join(flasher.targetPath,"main"),{recursive: true});
-
-        let topCmake=flasher.generateTopCMake();
-        fs.writeFileSync(path.join(flasher.targetPath,"CMakeLists.txt"),topCmake);
-
-        let projectCmake=flasher.generateProjectCMake(ev);
-        fs.writeFileSync(path.join(flasher.targetPath,"main","CMakeLists.txt"),projectCmake);
-    }
-
-    if (ev.buildBackend=="platformio") {
-        await flasher.createSrcExt(ev);
-    }
-
-    let boot=flasher.generateBootContent(ev);
-    fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);
-
-    let iniSource=flasher.generatePlatformioIni(ev);
-    fs.writeFileSync(path.join(flasher.targetPath,"platformio.ini"),iniSource);
-
-    let peakernelMainSource=flasher.generatePeakernelMain(ev);
-    fs.writeFileSync(path.join(flasher.targetPath,"peakernel_main.cpp"),peakernelMainSource);
-
-    if (!dryRun) {
-        await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
-    }
+    cwd=packageDirname(cwd);
+    let pkg=JSON.parse(fs.readFileSync(path.join(cwd,"package.json")));
+    let flasher=new PeakernelFlasher({cwd, port, dryRun, projectName: pkg.name});
+    await flasher.run();
 }

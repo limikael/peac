@@ -6,7 +6,6 @@
   },
   "dependencies": {},
   "disablePlugins": [
-    "pk-arduino",
     "pk-gpio",
     "pk-info",
     "pk-littlefs",
@@ -14,7 +13,8 @@
     "pk-repl",
     "pk-runtime",
     "pk-serial-console",
-    "pk-vfs"
+    "pk-vfs",
+    "pk-arduino"
   ],
   "enablePlugins": [
     "pk-espidf"

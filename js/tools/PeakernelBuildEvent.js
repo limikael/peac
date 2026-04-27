@@ -16,13 +16,11 @@ export default class PeakernelBuildEvent extends HookEvent {
         this.buildFlags=[];
         this.buildUnflags=[];
         this.platformioIniItems={};
+        this.cmake=false;
     }
 
-    setBuildBackend(backend) {
-        if (this.buildBackend)
-            throw new DeclaredError("Build backend already set. Multiple build plugins?");
-
-        this.buildBackend=backend;
+    setCmake(cmake) {
+        this.cmake=cmake;
     }
 
     addBuildFlag(f) {

@@ -10,5 +10,5 @@ export function build(ev) {
     ev.addBuildUnflag("-Werror=all");
     ev.addBuildFlag("-Wno-error=incompatible-pointer-types");
     ev.addBuildFlag("-fpermissive");
-    ev.setBuildBackend("cmake");
+    ev.setCmake(true);
 }

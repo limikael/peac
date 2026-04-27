@@ -9,5 +9,4 @@ export function build(ev) {
 	ev.addPlatformioIniItem("framework","arduino");
     ev.addBuildFlag("-DARDUINO_USB_MODE=1");
     ev.addBuildFlag("-DARDUINO_USB_CDC_ON_BOOT=1");
-    ev.setBuildBackend("platformio");
-}
+ }
