@@ -86,35 +86,6 @@ class PeakernelFlasher {
         }
 
         return createIniContent(platformioIni);
-
-        /*return unindent(`
-            [platformio]
-            src_dir = main
-            [env:peakernel]
-            board = esp32-c3-devkitm-1
-            ${"\n"+Object.entries(ev.platformioIniItems).map(([k,v])=>`${" ".repeat(12)}${k} = ${v}`).join("\n")}
-            build_unflags = 
-                -std=gnu++11  # remove the default
-                ${"\n"+ev.buildUnflags.map(d=>`${" ".repeat(16)}${d}`).join("\n")}
-            build_flags = 
-                ${"\n"+ev.buildFlags.map(d=>`${" ".repeat(16)}${d}`).join("\n")}
-                -std=c++17
-                -DJS_STRICT_NAN_BOXING
-                -DJS_NO_REGEXP
-                -DJS_NO_MODULE_LOADER
-                -DJS_NO_OS
-                -DCONFIG_VERSION=\\"embedded\\"
-                -DEMSCRIPTEN
-                -DJSVAL_TARGET_QUICKJS
-                ${"\n"+includeDirs.map(d=>`${" ".repeat(16)}-I${d}`).join("\n")}
-                ${"\n"+Object.entries(ev.defines).map(([k,v])=>`${" ".repeat(16)}-D${k}=${v?v:""}`).join("\n")}
-            monitor_speed = 115200
-            upload_port=${port}
-            monitor_port=${port}
-            build_src_filter =
-                -<*>
-                ${"\n"+ev.sources.map(d=>`${" ".repeat(16)}+<${d}>`).join("\n")}
-        `+"\n");*/
     }
 
     generateTopCMake(ev) {
