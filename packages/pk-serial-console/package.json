@@ -1,5 +1,6 @@
 {
 	"name": "pk-serial-console",
+	"description": "Exposes /dev/console.",
 	"keywords": ["peakernel-plugin"],
 	"type": "module",
 	"exports": {

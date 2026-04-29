@@ -1,5 +1,6 @@
 {
 	"name": "pk-repl",
+	"description": "JavaScript repl.",
 	"keywords": ["peakernel-plugin"],
 	"type": "module",
 	"exports": {

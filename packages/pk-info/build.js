@@ -1,4 +1,5 @@
 import {dirnameFromImportMeta} from "../../js/utils/node-util.js";
+import {attachEventCommand} from "../../js/utils/commander-util.js";
 import {createDevice} from "../../js/device/Device.js";
 import path from "path";
 
@@ -20,9 +21,15 @@ export async function peakernelInfo({cwd, port}) {
     await device.close();
 }
 
-export function cliConfig(ev) {
-    ev.program
-        .command('info')
-        .description("Show runtime info.")
-        .mergedAction(peakernelInfo)
+export async function configCli(program, project) {
+    attachEventCommand(program,project,"info")
+        .description("Show runtime info.");
+}
+
+export async function info({port}) {
+    let device=await createDevice({port});
+    let info=await device.getInfo();
+    await device.close();
+
+    console.log(JSON.stringify(info,null,2));
 }

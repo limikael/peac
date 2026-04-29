@@ -21,7 +21,7 @@ function clearInterval(id) {
 if (globalThis.Fs) {
 	globalThis.fs=Fs.getInstance();
 
-	let devConsole=fs.open("/dev/console","doesn't matter");
+	let devConsole=globalThis.fs.open("/dev/console","doesn't matter");
 	if (devConsole) {
 		globalThis.console={};
 		globalThis.console.log=s=>{

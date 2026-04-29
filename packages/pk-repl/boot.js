@@ -100,4 +100,5 @@ function installRepl(serial) {
     globalThis.__repl=new Repl(serial,globalThis);
 }
 
-installRepl(fs.open("/dev/console","rw"));
+if (globalThis.Fs)
+    installRepl(Fs.getInstance().open("/dev/console","rw"));

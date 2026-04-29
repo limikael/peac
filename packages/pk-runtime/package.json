@@ -1,5 +1,6 @@
 {
 	"name": "pk-runtime",
+	"description": "JavaScript runtime (timers & console).",
 	"keywords": ["peakernel-plugin"],
 	"type": "module",
 	"exports": {

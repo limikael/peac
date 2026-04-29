@@ -2,21 +2,22 @@ import {dirnameFromImportMeta, runCommand, packageDirname} from "../utils/node-u
 import {DeclaredError} from "../utils/js-util.js";
 import path from "path";
 import fs from "fs";
-import {loadHookChannel, HookEvent} from "hook-channel";
 import {peabind, peabindMerge, peabindGetLibConf} from "peabind";
 import {escapeCString, unindent, autoIndent} from "../utils/lang-util.js";
 import JSON5 from "json5";
 import PeakernelBuildEvent from "./PeakernelBuildEvent.js";
-import {peakernelLoadHookChannel} from "./peakernel-commands.js";
 import {pioParse, pioStringify, pioGetEnvNames, pioGetEnv, pioEnvNormalize} from "../utils/pio-util.js";
+import {Command, Option, program} from "commander";
+import {attachEventCommand} from "../utils/commander-util.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeakernelFlasher {
-    constructor({cwd, port, dryRun}) {
+    constructor({cwd, port, dryRun, project}) {
         if (!port)
             throw new DeclaredError("No port specified.");
 
+        this.project=project;
         this.cwd=cwd;
         this.port=port;
         this.targetPath=path.join(this.cwd,".target");
@@ -142,8 +143,8 @@ class PeakernelFlasher {
     }
 
     async createBuildEvent() {
-        let hookChannel=await peakernelLoadHookChannel({cwd: this.cwd});
-        let ev=await hookChannel.dispatch(new PeakernelBuildEvent());
+        let ev=new PeakernelBuildEvent();
+        await this.project.build(ev);
 
         ev.addIncludeDir(this.targetPath);
         ev.addIncludeDir(path.join(__dirname,"../../src"));
@@ -217,16 +218,14 @@ class PeakernelFlasher {
     }
 }
 
-export async function peakernelFlash({cwd, port, dryRun, args, main}) {
-    cwd=packageDirname(cwd);
-
+export async function flash({cwd, port, dryRun, args, main, project}) {
     if (args[0])
         main=args[0];
 
     else if (main)
         main=path.resolve(cwd,main);
 
-    let flasher=new PeakernelFlasher({cwd, port, dryRun});
+    let flasher=new PeakernelFlasher({cwd, port, dryRun, project});
     let ev=await flasher.createBuildEvent();
 
     if (!fs.existsSync(path.join(cwd,"platformio.ini")))
@@ -256,4 +255,12 @@ export async function peakernelFlash({cwd, port, dryRun, args, main}) {
     if (!dryRun) {
         await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
     }
+}
+
+export async function configCli(program, project) {
+    attachEventCommand(program,project,"flash")
+        .description("Compile and flash firmware.")
+        .argument('[file]', 'Main file.')
+        .addOption(new Option("-m, --main <file>","Main file.").env("PEAKERNEL_MAIN"))
+        .option("--dry-run","Just build, don't flash.");
 }
