@@ -1,6 +1,6 @@
 {
   "name": "peakernel",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "JavaScript based MCU platform.",
   "scripts": {
     "ext": "./js/tools/ext.js",
@@ -29,7 +29,7 @@
     "commander": "^14.0.3",
     "console-table-without-index": "^0.1.1",
     "dotenv": "^17.4.2",
-    "chain-import": "^1.0.3",
+    "chain-import": "^1.0.4",
     "json5": "^2.2.3",
     "package-up": "^5.0.0",
     "peabind": "link:../peabind",

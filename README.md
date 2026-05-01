@@ -1,11 +1,11 @@
-# PEAC System
+# Peakernel System
 
-PEAC is a modular firmware composition and execution platform for embedded and runtime systems.
+Peakernel is a modular firmware composition and execution platform for embedded and runtime systems.
 
 It combines:
 - JavaScript for high-level behavior
 - C++ for hardware and native capabilities
-- A minimal runtime (PEAC) for orchestration
+- A minimal runtime (Peakernel) for orchestration
 - A plugin system based on hooks and events
 
 ---
@@ -14,14 +14,14 @@ It combines:
 
 Build firmware once, iterate behavior continuously.
 
-PEAC separates:
+Peakernel separates:
 - Slow system construction (C++, firmware build)
 - Fast iteration (JavaScript deployment)
 
 Commands:
 
-- peac flash → rebuild firmware (C++ + bindings)
-- peac deploy → update JavaScript only
+- peakernel flash → rebuild firmware (C++ + bindings)
+- peakernel deploy → update JavaScript only
 
 ---
 
@@ -38,9 +38,9 @@ JavaScript (user logic)
 
 # Components
 
-## peac (Runtime Platform)
+## peakernel (Runtime Platform)
 
-PEAC is the runtime system that:
+Peakernel is the runtime system that:
 - Executes JavaScript on embedded devices
 - Hosts plugin execution via hook-channel
 - Manages lifecycle and event loop
@@ -48,8 +48,8 @@ PEAC is the runtime system that:
 
 Example:
 
-peac deploy --engine=quickjs
-peac flash
+peakernel deploy --engine=quickjs
+peakernel flash
 
 ---
 
@@ -95,7 +95,7 @@ Execution modes:
 
 ## peabrain (Application Layer)
 
-peabrain is a machine control application built on PEAC.
+peabrain is a machine control application built on Peakernel.
 
 It:
 - Controls machines
@@ -114,7 +114,7 @@ motor.targetPosition = 1000;
 C++ CANopen implementation.
 
 It:
-- Runs standalone or as PEAC plugin
+- Runs standalone or as Peakernel plugin
 - Controls industrial devices
 - Supports motors and distributed systems
 
@@ -135,7 +135,7 @@ Filtered by keywords and exports.
 ## Plugin Example
 
 {
-  "keywords": ["peac-plugin"],
+  "keywords": ["peakernel-plugin"],
   "exports": {
     "./main": "./plugin.js"
   }
@@ -176,7 +176,7 @@ ev.config.value = 42
 
 ---
 
-# Build System (peac flash)
+# Build System (peakernel flash)
 
 Pipeline:
 
@@ -197,7 +197,7 @@ Output:
 
 ---
 
-# Deployment (peac deploy)
+# Deployment (peakernel deploy)
 
 Fast iteration without firmware rebuild.
 
@@ -265,7 +265,7 @@ framework = arduino
 # Design Principles
 
 ## 1. Separation of concerns
-- peac = runtime
+- peakernel = runtime
 - peabind = binding layer
 - plugins = functionality
 - PlatformIO = build system
@@ -290,7 +290,7 @@ framework = arduino
 
 # Summary
 
-PEAC is a modular embedded runtime where:
+Peakernel is a modular embedded runtime where:
 - JavaScript controls behavior
 - C++ provides hardware capabilities
 - Plugins extend the system via hooks
