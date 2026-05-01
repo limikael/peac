@@ -20,7 +20,7 @@
     "peakernel": "./js/tools/peakernel-cli.js"
   },
   "type": "module",
-  "keywords": [],
+  "keywords": ["peakernel-plugin"],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.28.2",
