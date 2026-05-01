@@ -1,13 +1,20 @@
 {
   "name": "peakernel",
   "version": "1.0.0",
-  "description": "",
+  "description": "JavaScript based MCU platform.",
   "scripts": {
     "ext": "./js/tools/ext.js",
     "test": "pnpm test:js && pnpm test:c",
     "test:js": "jasmine",
     "test:c": "make test",
     "test:sys": "jasmine --config=spec/support/jasmine-sys.mjs"
+  },
+  "packages": "packages",
+  "exports": {
+    ".": {
+      "node": "./js/exports/exports-node.js"
+    },
+    "./peakernel-project-hooks": "./js/tools/peakernel-commands.js"
   },
   "bin": {
     "peakernel": "./js/tools/peakernel-cli.js"

@@ -11,6 +11,11 @@ export default class PeakernelBuildEvent {
         this.stopFunctions=[];
         this.defines={};
         this.externalBootFile=false;
+        this.libDeps=[];
+    }
+
+    addLibDep(libDep) {
+        this.libDeps.push(libDep);
     }
 
     setExternalBootFile(v) {

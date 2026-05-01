@@ -37,7 +37,8 @@ export async function deploy({cwd, port, args, main}) {
 
 flash.priority=20;
 export async function flash({cwd, port, args, main}) {
-    deploy({cwd, port, args, main});
+    if (main || args[0])
+        await deploy({cwd, port, args, main});
 }
 
 export async function configCli({chain, program}) {

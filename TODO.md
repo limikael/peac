@@ -1,20 +1,20 @@
 todo:
+
+backlog:
+- PEABIND_AUTO_INCLUDE ?
+- commands and shell (exec)
 - internal plugins (not listed)
-- make plugins more optional... flash boot file
 - mquickjs
 - w/o Arduino, i.e. esp-idf
+
+old:
+x make plugins more optional... flash boot file
 x rename
 x plugin priority <-- instead... addSource(...,{priority:})
 x modularize
 x enable/disable plugins
 x static
 x throw and handle exceptions correctly
-
-backlog:
-- PEABIND_AUTO_INCLUDE ?
-- commands and shell (exec)
-
-old:
 x FS
 x deploy
 x digitalWrite proper function name

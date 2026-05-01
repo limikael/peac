@@ -20,7 +20,7 @@ export function unindent(s) {
     lines=lines.filter(l=>l.trim());
     let leadingWhiteSpace=countLeadingWhitespace(lines[0]);
     lines=lines.map(l=>l.slice(leadingWhiteSpace));
-    return lines.join("\n");
+    return lines.join("\n")+"\n";
 }
 
 export function autoIndent(text, indentSize=4) {

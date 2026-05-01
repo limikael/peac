@@ -5,9 +5,11 @@ import {SerialDeviceConnection, createSerialDeviceConnection} from "../device/Se
 import {proxyComposeFb} from "../utils/proxy-compose.js";
 import fs, {promises as fsp} from "fs";
 import {DeclaredError} from "../utils/js-util.js";
+import {unindent} from "../utils/lang-util.js";
 import {pioStringify} from "../utils/pio-util.js";
 import {Command, Option, program} from "commander";
 import {chainAttachCommanderCommand, chainList, chainEnable, chainDisable} from "chain-import";
+export {flash} from "./peakernel-flash.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
@@ -46,7 +48,7 @@ export async function init() {
 
     fs.writeFileSync(path.join(cwd,"package.json"),JSON.stringify(pkg,null,2));
 
-    let ini={
+    /*let ini={
         ["env:"+path.basename(cwd)]: {
             "platform": "espressif32",
             "framework": "arduino",
@@ -54,15 +56,28 @@ export async function init() {
         }
     }
 
-    fs.writeFileSync(path.join(cwd,"platformio.ini"),pioStringify(ini));
+    fs.writeFileSync(path.join(cwd,"platformio.ini"),pioStringify(ini));*/
+
+    let dotEnv=unindent(`
+        # Port 
+        # PEAKERNEL_PORT=/dev/ttyACM0
+        # Board
+        # PEAKERNEL_BOARD=esp32-c3-devkitm-1
+    `);
+
+    fs.writeFileSync(path.join(cwd,".env"),dotEnv);
 }
 
-export async function lsmod({chain, cwd, short}) {
+export async function lsmod({chain, cwd, short, all}) {
+    let opts={internal: false};
+    if (all)
+        opts={};
+
     if (short)
-        console.log((await chainList(chain)).map(m=>m.name).join(" "));
+        console.log((await chainList(chain,opts)).map(m=>m.name).join(" "));
 
     else
-        table(await chainList(chain));
+        table(await chainList(chain,opts));
 }
 
 export async function stop({port}) {
@@ -89,6 +104,9 @@ export async function disable({chain, args}) {
 }
 
 export async function configCli({chain, program}) {
+    chainAttachCommanderCommand(chain,program,"init")
+        .description("Create project in current dir.");
+
     chainAttachCommanderCommand(chain,program,"cat")
         .description("Print remote file.")
         .argument('<file>', 'File to print.');
@@ -96,11 +114,9 @@ export async function configCli({chain, program}) {
     chainAttachCommanderCommand(chain,program,"monitor")
         .description("Open monitor.");
 
-    chainAttachCommanderCommand(chain,program,"init")
-        .description("Create peakernel project in current dir.");
-
     chainAttachCommanderCommand(chain,program,"lsmod")
         .option("--short, -s","Just list names")
+        .option("--all, -a","Include internal plugins")
         .description("List plugin modules.");
 
     chainAttachCommanderCommand(chain,program,"enable")
@@ -116,4 +132,11 @@ export async function configCli({chain, program}) {
 
     chainAttachCommanderCommand(chain,program,"stop")
         .description("Stop the current program.");
+
+    chainAttachCommanderCommand(chain,program,"flash")
+        .description("Compile and flash firmware.")
+        .argument('[file]', 'Main file.')
+        .addOption(new Option("-m, --main <file>","Main file.").env("PEAKERNEL_MAIN"))
+        .addOption(new Option("-b, --board <board>","Target board.").env("PEAKERNEL_BOARD"))
+        .option("--dry-run","Just build, don't flash.");
 }

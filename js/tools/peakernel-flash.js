@@ -1,7 +1,8 @@
 import {dirnameFromImportMeta, runCommand, packageDirname} from "../utils/node-util.js";
 import {DeclaredError} from "../utils/js-util.js";
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
+import os from "node:os";
 import {peabind, peabindMerge, peabindGetLibConf} from "peabind";
 import {escapeCString, unindent, autoIndent} from "../utils/lang-util.js";
 import JSON5 from "json5";
@@ -13,15 +14,21 @@ import {chainAttachCommanderCommand} from "chain-import";
 let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeakernelFlasher {
-    constructor({cwd, port, dryRun, chain}) {
+    constructor({cwd, port, dryRun, chain, board}) {
         if (!port)
             throw new DeclaredError("No port specified.");
 
+        this.board=board;
         this.chain=chain;
         this.cwd=cwd;
         this.port=port;
-        this.targetPath=path.join(this.cwd,".target");
         this.dryRun=dryRun;
+
+        if (this.cwd)
+            this.targetPath=path.join(this.cwd,".target");
+
+        else
+            this.targetPath=path.join(os.tmpdir(),"peakernel-tmp",".target");
     }
 
     generateSrcExt(ev) {
@@ -87,11 +94,29 @@ class PeakernelFlasher {
     }
 
     generatePlatformioIni(ev) {
-        let ini=pioParse(fs.readFileSync(path.join(this.cwd,"platformio.ini"),"utf8"));
+        let ini;
+        if (this.cwd && fs.existsSync(path.join(this.cwd,"platformio.ini")))
+            ini=pioParse(fs.readFileSync(path.join(this.cwd,"platformio.ini"),"utf8"));
+
+        else
+            ini={"env:default": {}};
+
         if (pioGetEnvNames(ini).length!=1)
             throw new Error("Expectd exactly one env in platformio.ini");
 
         let env=pioEnvNormalize(pioGetEnv(ini,pioGetEnvNames(ini)[0]));
+        if (!env.platform)
+            env.platform="espressif32";
+
+        if (!env.framework)
+            env.framework="arduino";
+
+        if (this.board)
+            env.board=this.board;
+
+        if (!env.board)
+            throw new DeclaredError("No board selected (pass on the cmd line, or set in .env");
+
         env.upload_port=this.port;
         env.monitor_port=this.port;
         env.monitor_speed=115200;
@@ -108,6 +133,11 @@ class PeakernelFlasher {
             ...ev.includeDirs.map(d=>`-I${d}`),
             ...Object.entries(ev.defines).map(([k,v])=>`-D${k}${v?"="+v:""}`),
         ]);
+
+        if (!env.lib_deps)
+            env.lib_deps=[];
+
+        env.lib_deps.push(...ev.libDeps);
 
         if (env.build_src_filter)
             throw new DeclaredError("Don't specify build_src_filter");
@@ -218,18 +248,18 @@ class PeakernelFlasher {
     }
 }
 
-export async function flash({cwd, port, dryRun, args, main, chain}) {
+export async function flash({cwd, port, dryRun, args, main, chain, board}) {
     if (args[0])
         main=args[0];
 
     else if (main)
         main=path.resolve(cwd,main);
 
-    let flasher=new PeakernelFlasher({cwd, port, dryRun, chain});
+    let flasher=new PeakernelFlasher({cwd, port, dryRun, chain, board});
     let ev=await flasher.createBuildEvent();
 
-    if (!fs.existsSync(path.join(cwd,"platformio.ini")))
-        throw new DeclaredError("No platformio.ini");
+    /*if (!fs.existsSync(path.join(cwd,"platformio.ini")))
+        throw new DeclaredError("No platformio.ini");*/
 
     fs.mkdirSync(flasher.targetPath,{recursive: true});
 
@@ -255,12 +285,4 @@ export async function flash({cwd, port, dryRun, args, main, chain}) {
     if (!dryRun) {
         await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
     }
-}
-
-export async function configCli({chain, program}) {
-    chainAttachCommanderCommand(chain,program,"flash")
-        .description("Compile and flash firmware.")
-        .argument('[file]', 'Main file.')
-        .addOption(new Option("-m, --main <file>","Main file.").env("PEAKERNEL_MAIN"))
-        .option("--dry-run","Just build, don't flash.");
 }

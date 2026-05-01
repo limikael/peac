@@ -5,21 +5,17 @@ import path from "path";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
-export async function peakernelLoad({cwd, extraModuleDirs, extraModules}) {
-	extraModules=[
-		...arrayify(extraModules), 
-		await import("./peakernel-commands.js"),
-		await import("./peakernel-flash.js")
-	];
-	extraModuleDirs=[...arrayify(extraModuleDirs), path.join(__dirname,"../../packages")];
-
+export async function peakernelLoad({cwd, roots, internal}) {
 	return await chainImport({
 	    cwd,
-	    extraModules,
-	    extraModuleDirs,
+	    roots: [path.join(__dirname,"../.."), ...arrayify(roots)],
 	    keyword: "peakernel-plugin",
 	    exportPath: "peakernel-project-hooks",
 	    enableKey: "enablePlugins",
-	    disableKey: "disablePlugins"
-	});  
+	    disableKey: "disablePlugins",
+	    defaultEnableKey: "defaultEnable",
+	    workspaceKey: "packages",
+	    internalKey: "internal",
+	    internal: ["peakernel",...arrayify(internal)]
+	});
 }
