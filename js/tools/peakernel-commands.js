@@ -20,9 +20,18 @@ export async function cat({cwd, port, args}) {
     await device.close();
 }
 
-export async function monitor({cwd, port}) {
+export async function monitor({cwd, port, targetDir}) {
     cwd=packageDirname(cwd);
-    let targetPath=path.join(cwd,".target");
+    let targetPath;
+
+    if (targetDir)
+        targetPath=targetDir;
+
+    else if (cwd)
+        targetPath=path.join(cwd,".target");
+
+    else
+        targetPath=path.join(os.tmpdir(),"peakernel-tmp",".target");
 
     await runCommand("pio",["device","monitor"],{cwd: targetPath});
 }
@@ -114,7 +123,8 @@ export async function configCli({chain, program}) {
         .argument('<file>', 'File to print.');
 
     chainAttachCommanderCommand(chain,program,"monitor")
-        .description("Open monitor.");
+        .description("Open monitor.")
+        .addOption(new Option("--target-dir <dir>","Temporary project target dir.").env("PEAKERNEL_TARGET_DIR"))
 
     chainAttachCommanderCommand(chain,program,"lsmod")
         .option("--short, -s","Just list names")
