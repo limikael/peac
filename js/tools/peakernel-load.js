@@ -22,6 +22,8 @@ export async function peakernelLoad({cwd, roots, internal}) {
 	});
 
 	chainSetContract(chain,"init","first-defined");
+	chainSetContract(chain,"canBootFromFile","first-defined");
+	chainSetContract(chain,"bundleConf");
 
 	return chain;
 }

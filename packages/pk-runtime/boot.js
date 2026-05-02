@@ -42,25 +42,24 @@ globalThis.bootPromise=new Promise((res,rej)=>{
 	globalThis.bootPromiseReject=rej;
 });
 
-function waitFor(bootWaitFor) {
-	globalThis.bootWaitFor=bootWaitFor;
-}
-
 async function boot() {
-	if (globalThis.bootFunction)
-		globalThis.bootFunction();
+	try {
+		if (globalThis.bootFunction)
+			await globalThis.bootFunction();
 
-	else {
-		let bootContent=decodeAscii(await readFile("/boot.js"));
-		eval(bootContent);
+		else {
+			let bootContent=decodeAscii(await readFile("/boot.js"));
+			await eval(bootContent);
+		}
+
+		globalThis.bootPromiseResolve();
+		bootResolve();
 	}
 
-	if (typeof globalThis.bootWaitFor=="function") {
-		globalThis.bootWaitFor=globalThis.bootWaitFor();
+	catch (e) {
+		globalThis.bootPromiseReject(e);
+		bootReject(e.message);
 	}
-
-	await globalThis.bootWaitFor;
-	globalThis.bootPromiseResolve();
 }
 
 async function awaitBoot() {

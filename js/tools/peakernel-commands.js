@@ -10,6 +10,7 @@ import {pioStringify} from "../utils/pio-util.js";
 import {Command, Option, program} from "commander";
 import {chainAttachCommanderCommand, chainList, chainEnable, chainDisable} from "chain-import";
 export {flash} from "./peakernel-flash.js";
+export {deploy} from "./peakernel-deploy.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
@@ -152,4 +153,9 @@ export async function configCli({chain, program}) {
         .addOption(new Option("-b, --board <board>","Target board.").env("PEAKERNEL_BOARD"))
         .addOption(new Option("--target-dir <dir>","Temporary project target dir.").env("PEAKERNEL_TARGET_DIR"))
         .option("--dry-run","Just build, don't flash.");
+
+    chainAttachCommanderCommand(chain,program,"deploy")
+        .description("Deploy program.")
+        .argument('[file]', 'Main file.')
+        .addOption(new Option("-m, --main <file>","Main file.").env("PEAKERNEL_MAIN"));
 }

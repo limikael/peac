@@ -3,5 +3,7 @@
 	"functions": {
 		"scheduleRestart": {"args": ["int"]},
 		"gc": {},
+		"bootResolve": {},
+		"bootReject": {"args": ["string"]}
 	}
 }

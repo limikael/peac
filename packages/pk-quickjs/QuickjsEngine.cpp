@@ -25,12 +25,19 @@ void QuickjsEngine::setup() {
 		record->setInt("freeBlocks",info.free_blocks);
 		record->setInt("liveObjects",pk_bindings_get_num_objects());
 		record->setInt("numListeners",pk_bindings_get_num_listeners());
+		record->setString("bootError",errorMessage);
 
-		if (running)
-			record->setString("state","running");
+		if (errorMessage!="")
+			record->setString("state","error");
+
+		else if (!running)
+			record->setString("state","stopped");
+
+		else if (!bootComplete)
+			record->setString("state","booting");
 
 		else
-			record->setString("state","stopped");
+			record->setString("state","running");
 	});
 #endif
 }
@@ -40,6 +47,7 @@ void QuickjsEngine::begin() {
 	JSRuntime *rt=JS_NewRuntime();
     ctx=JS_NewContext(rt);
 	errorMessage="";
+	bootComplete=false;
 
 	pk_bindings_init(ctx);
 }
@@ -59,6 +67,7 @@ void QuickjsEngine::runBootScript() {
 		JSVAL bootRes=jsvalCall(bootFn,jsvalUndefined(),0,NULL);
 		if (jsvalHasException()) {
 			errorMessage=jsvalCatchExceptionStdString();
+			jsvalFree(bootFn);
 			jsvalFree(bootRes);
 			return;
 		}
@@ -93,13 +102,20 @@ void QuickjsEngine::loop() {
 #elif defined(ESP_PLATFORM)
 			printf("%s\n",errorMessage.c_str());
 #endif
-
 		}
 	}
 }
 
 void QuickjsEngine::gc() {
 	jsvalQuickjsRunGc();
+}
+
+void QuickjsEngine::bootResolve() {
+	bootComplete=true;
+}
+
+void QuickjsEngine::bootReject(std::string message) {
+	errorMessage=message;
 }
 
 extern "C" void peakernel_restart();
@@ -134,4 +150,12 @@ extern "C" void quickjs_loop() {
 
 extern "C" void quickjs_stop() {
 	engine.close();
+}
+
+void bootResolve() {
+	engine.bootResolve();
+}
+
+void bootReject(std::string message) {
+	engine.bootReject(message);
 }

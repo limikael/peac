@@ -10,14 +10,17 @@ import PeakernelBuildEvent from "./PeakernelBuildEvent.js";
 import {pioParse, pioStringify, pioGetEnvNames, pioGetEnv, pioEnvNormalize} from "../utils/pio-util.js";
 import {Command, Option, program} from "commander";
 import {chainAttachCommanderCommand} from "chain-import";
+import {resolveDeployFile, PeakernelBundler} from "./peakernel-deploy.js";
 
 let __dirname=dirnameFromImportMeta(import.meta);
 
 class PeakernelFlasher {
-    constructor({cwd, port, dryRun, chain, board, targetDir}) {
+    constructor({cwd, port, dryRun, args, main, chain, board, targetDir}) {
         if (!port)
             throw new DeclaredError("No port specified.");
 
+        this.args=args;
+        this.main=main;
         this.board=board;
         this.chain=chain;
         this.cwd=cwd;
@@ -239,10 +242,17 @@ class PeakernelFlasher {
         `);
     }
 
-    generateBootContent(ev, main) {
+    async generateBootContent(ev) {
         let mainContent="";
-        if (main)
-            mainContent=`globalThis.bootFunction=()=>{${fs.readFileSync(main,"utf8")}};`;
+
+        if (!await this.chain.canBootFromFile()) {
+            let deployFile=resolveDeployFile({cwd: this.cwd, main: this.main, args: this.args});
+            if (deployFile) {
+                console.log("Bundling with firmware: "+deployFile);
+                let bundler=new PeakernelBundler({main: deployFile});
+                mainContent=`globalThis.bootFunction=()=>${await bundler.getBundleAiife()};`;
+            }
+        }
 
         let content=`
             ${ev.bootContent}
@@ -255,13 +265,7 @@ class PeakernelFlasher {
 }
 
 export async function flash({cwd, port, dryRun, args, main, chain, board, targetDir}) {
-    if (args[0])
-        main=args[0];
-
-    else if (main)
-        main=path.resolve(cwd,main);
-
-    let flasher=new PeakernelFlasher({cwd, port, dryRun, chain, board, targetDir});
+    let flasher=new PeakernelFlasher({cwd, port, dryRun, args, main, chain, board, targetDir});
     let ev=await flasher.createBuildEvent();
 
     /*if (!fs.existsSync(path.join(cwd,"platformio.ini")))
@@ -276,11 +280,7 @@ export async function flash({cwd, port, dryRun, args, main, chain, board, target
         prefix: "pk_bindings_"
     });
 
-    let bootFile;
-    if (!ev.externalBootFile)
-        bootFile=main;
-
-    let boot=flasher.generateBootContent(ev,bootFile);
+    let boot=await flasher.generateBootContent(ev);
     fs.writeFileSync(path.join(flasher.targetPath,"boot_js.c"),boot);
 
     let peakernelMainSource=flasher.generatePeakernelMain(ev);
@@ -290,5 +290,7 @@ export async function flash({cwd, port, dryRun, args, main, chain, board, target
 
     if (!dryRun) {
         await runCommand("pio",["run","--target","upload"],{cwd: flasher.targetPath});
+        if (await chain.canBootFromFile())
+            await chain.deploy({chain, cwd, port, args, main})
     }
 }

@@ -32,6 +32,7 @@
     "commander": "^14.0.3",
     "console-table-without-index": "^0.1.1",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.0",
     "json5": "^2.2.3",
     "package-up": "^5.0.0",
     "peabind": "^1.0.1",
