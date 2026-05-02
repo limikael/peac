@@ -1,297 +1,201 @@
-# Peakernel System
+# peakernel
 
-Peakernel is a modular firmware composition and execution platform for embedded and runtime systems.
+> A fully pluggable embedded platform where capabilities, runtime, and communication are unified and transport-independent.
 
-It combines:
-- JavaScript for high-level behavior
-- C++ for hardware and native capabilities
-- A minimal runtime (Peakernel) for orchestration
-- A plugin system based on hooks and events
+## Why peakernel?
 
----
+Peakernel brings a modern developer experience to embedded systems:
 
-# Core Idea
+* Install hardware capabilities with npm.
+* Run JavaScript on the device and deploy in <1 second
+* Extend everything - firmware, runtime, CLI, and communication - using plugins
 
-Build firmware once, iterate behavior continuously.
+## 30-second quick start
 
-Peakernel separates:
-- Slow system construction (C++, firmware build)
-- Fast iteration (JavaScript deployment)
+Create a new project:
 
-Commands:
+```bash
+npm create peakernel
+cd my-project
+```
 
-- peakernel flash → rebuild firmware (C++ + bindings)
-- peakernel deploy → update JavaScript only
+Flash the device:
 
----
+```bash
+npm run flash
+```
 
-# Architecture
+This flashes a minimal firmware and runs `blink.js` (LED blinking).
 
-JavaScript (user logic)
-→ QuickJS (embedded runtime)
-→ peabind (binding generator)
-→ C++ plugins (hardware logic)
-→ PlatformIO / ESP-IDF / Arduino
-→ Hardware (ESP32 and similar devices)
+Edit `blink.js`:
 
----
+```js
+const LEDPIN=8; // Check your board for onboard LED pin, 8 is for ESP32-C3 supermini.
+pinMode(LEDPIN,"output");
+setInterval(()=>{
+  digitalWrite(LEDPIN,!digitalRead(LEDPIN));
+},1000);
+```
 
-# Components
+Deploy instantly (no full flash):
 
-## peakernel (Runtime Platform)
+```bash
+npm run deploy
+```
 
-Peakernel is the runtime system that:
-- Executes JavaScript on embedded devices
-- Hosts plugin execution via hook-channel
-- Manages lifecycle and event loop
-- Selects JS engine (e.g. QuickJS)
+Open a REPL on the device:
 
-Example:
+```bash
+peakernel monitor
+```
 
-peakernel deploy --engine=quickjs
-peakernel flash
+## The core idea
 
----
+peakernel separates:
 
-## peabind (Binding Layer)
+* **firmware** (stable base)
+* **runtime** (JavaScript on device)
+* **capabilities** (plugins)
 
-peabind connects JavaScript and C++.
+This allows fast iteration:
 
-It:
-- Parses IDL definitions
-- Generates C++/JS glue code
-- Hides engine-specific APIs
-- Produces engine-agnostic plugins
+```bash
+edit code → deploy (<1s) → test → repeat
+```
 
-Key idea:
-Plugins do not depend on the JS engine.
+## Plugins
 
----
+> Plugins are full-stack modules that extend firmware, runtime, and tooling.
 
-## hook-channel (Plugin System)
+A single plugin can:
 
-A minimal hook-based execution system.
+* add native firmware (C/C++)
+* expose JavaScript APIs on the device
+* add CLI commands
+* expose RPC endpoints
+* integrate into build/deploy
+* provide new transports (serial, TCP, cloud, etc.)
 
-Core API:
+### Example: install hardware with npm
 
-await channel.dispatch("eventName", event)
+```bash
+npm install peakernel-can
+npm run flash
+```
 
-Features:
-- Plugins register functions per hook name
-- Ordered execution
-- Shared mutable event object
+Now your device has CAN support:
 
-Example plugin:
+```js
+await can.send(...)
+```
 
-export function build(ev) {
-  ev.messages.push("hello");
+No manual SDK integration. No firmware patching.
+
+### Example: UI on a 20x4 LCD (React-style)
+
+Install:
+
+```bash
+npm install peakernel-lcdui
+```
+
+Write:
+
+```js
+function App() {
+  return (
+    <Menu>
+      <MenuItem label="Item 1" />
+      <MenuItem label="Item 2" />
+    </Menu>
+  );
 }
 
-Execution modes:
-- Async: channel.dispatch(...)
-- Sync: channel.dispatchSync(...)
+renderController(<App />);
+```
 
----
+This renders a navigable UI on a 20x4 LCD using a rotary encoder.
 
-## peabrain (Application Layer)
+## Commands
 
-peabrain is a machine control application built on Peakernel.
+Commands are provided by the core and plugins:
 
-It:
-- Controls machines
-- Uses plugins and bindings
-- Runs user-defined automation logic
+```bash
+peakernel --help
+```
 
-Example:
+Plugins can:
 
-let motor = masterDevice.getRemoteDevice(123, { profile: MOTR_PROFILE });
-motor.targetPosition = 1000;
+* add new commands
+* extend existing ones
+* integrate into workflows
 
----
+## RPC & transport
 
-## canopener (CANopen Stack)
+The CLI communicates with the device via JSON-RPC.
 
-C++ CANopen implementation.
+Transports are pluggable:
 
-It:
-- Runs standalone or as Peakernel plugin
-- Controls industrial devices
-- Supports motors and distributed systems
+```
+serial:/dev/ttyUSB0
+tcp://192.168.1.50
+peacloud://device-uuid
+```
 
----
+Same commands, different connection.
 
-# Plugin System
+```bash
+peakernel monitor --target=peacloud://device-uuid
+```
 
-Plugins are standard Node modules.
+## JavaScript on the device
 
-Discovered from:
-- package.json dependencies
-- extraModuleDirs
+peakernel runs JavaScript directly on the device using pluggable engines:
 
-Filtered by keywords and exports.
+* QuickJS
+* mquickjs (experimental)
 
----
+You can:
 
-## Plugin Example
+```bash
+npm run deploy   # fast iteration (<1s)
+peakernel monitor # REPL
+```
 
-{
-  "keywords": ["peakernel-plugin"],
-  "exports": {
-    "./main": "./plugin.js"
-  }
-}
+## Architecture (high level)
 
----
+```
+CLI
+  ↓
+Transport (serial / TCP / cloud)
+  ↓
+JSON-RPC
+  ↓
+Device runtime (JS engine)
+  ↓
+Plugins (firmware + APIs)
+```
 
-## Plugin Code
+## What makes peakernel different?
 
-export function init(ev) {}
+* No fixed SDK
+* No monolithic firmware
+* No separation between tooling and runtime
 
-export function tick(ev) {}
+Instead:
 
-export function build(ev) {
-  ev.files.push("output.cpp");
-}
+> **Everything is a plugin.**
 
----
+## Vision
 
-# Hook Model
+* Hardware capabilities installable via npm
+* Devices accessible locally or remotely with the same commands
+* One system for firmware, runtime, CLI, and automation
 
-Single primitive:
+## Related
 
-channel.dispatch("hookName", event)
+* `peabrain` — a physical industrial controller built on peakernel
 
-Design:
-- Shared event object
-- Ordered execution
-- Deterministic behavior
+## Status
 
-Patterns:
-
-Side effect:
-ev.files.push(...)
-
-Accumulation:
-ev.config.value = 42
-
----
-
-# Build System (peakernel flash)
-
-Pipeline:
-
-1. Discover plugins
-2. Collect IDLs + sources
-3. Merge IDLs
-4. Generate bindings (peabind)
-5. Generate PlatformIO project
-6. Compile firmware
-
-Output:
-
-.target/
-  platformio.ini
-  src/
-  bindings.cpp
-  main.cpp
-
----
-
-# Deployment (peakernel deploy)
-
-Fast iteration without firmware rebuild.
-
-Flow:
-- Upload JavaScript to device storage
-- Device reloads runtime
-- QuickJS executes script
-
-Example:
-
-upload main.js → /main.js
-reboot device
-
-Runtime:
-
-JS_Eval(ctx, script, ...)
-
----
-
-# Object Model (peabind)
-
-Cross-language ownership model:
-
-JS object → handle (int) → C++ registry → shared_ptr
-
-Rules:
-- C++ owns lifetime via shared_ptr
-- JS holds opaque handles
-- GC triggers cleanup via FinalizationRegistry
-
-Guarantees:
-- No dangling pointers
-- No double free
-- Stable identity mapping
-
----
-
-# Event Loop
-
-Runs inside embedded firmware loop:
-
-void loop() {
-  processTimers();
-  runJS();
-}
-
-Supports:
-- setTimeout
-- setInterval
-- async tasks
-
----
-
-# PlatformIO Integration
-
-Generated project:
-
-[env:esp32dev]
-platform = espressif32
-board = esp32dev
-framework = arduino
-
----
-
-# Design Principles
-
-## 1. Separation of concerns
-- peakernel = runtime
-- peabind = binding layer
-- plugins = functionality
-- PlatformIO = build system
-
-## 2. Minimal primitives
-- hooks
-- events
-- bindings
-
-## 3. Deterministic execution
-- explicit discovery
-- ordered execution
-
-## 4. Engine independence
-- plugins are engine-agnostic
-
-## 5. Fast iteration
-- firmware rarely changes
-- JS changes frequently
-
----
-
-# Summary
-
-Peakernel is a modular embedded runtime where:
-- JavaScript controls behavior
-- C++ provides hardware capabilities
-- Plugins extend the system via hooks
-- A minimal runtime orchestrates everything
+Early stage, evolving quickly.
