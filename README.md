@@ -6,7 +6,7 @@
 
 Peakernel brings a modern developer experience to embedded systems:
 
-* Install hardware capabilities with npm.
+* Install hardware capabilities with npm
 * Run JavaScript on the device and deploy in <1 second
 * Extend everything - firmware, runtime, CLI, and communication - using plugins
 
