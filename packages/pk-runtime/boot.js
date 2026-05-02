@@ -48,7 +48,9 @@ async function boot() {
 			await globalThis.bootFunction();
 
 		else {
-			let bootContent=decodeAscii(await readFile("/boot.js"));
+			//gc();
+			let bootBuffer=await readFile("/boot.js");
+			let bootContent=decodeAscii(bootBuffer);
 			await eval(bootContent);
 		}
 

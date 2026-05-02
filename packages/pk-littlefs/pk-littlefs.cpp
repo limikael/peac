@@ -33,6 +33,9 @@ void littlefs_setup() {
             if (size<0)
                 size=1024;
 
+            if (size>1024)
+                size=1024;
+
             std::vector<uint8_t> buffer(size);
             size_t n=file.read(buffer.data(), buffer.size());
             //printf("littlefs read bytes: %d\n",n);
