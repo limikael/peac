@@ -249,7 +249,7 @@ class PeakernelFlasher {
             let deployFile=resolveDeployFile({cwd: this.cwd, main: this.main, args: this.args});
             if (deployFile) {
                 console.log("Bundling with firmware: "+deployFile);
-                let bundler=new PeakernelBundler({main: deployFile});
+                let bundler=new PeakernelBundler({cwd: this.cwd, chain: this.chain, main: deployFile});
                 mainContent=`globalThis.bootFunction=()=>${await bundler.getBundleAiife()};`;
             }
         }

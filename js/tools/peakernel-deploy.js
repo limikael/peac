@@ -12,7 +12,7 @@ export class PeakernelBundler {
     }
 
     async getBundleAiife() {
-        let esbuildConf={
+        let esbuildConfig={
             entryPoints: [this.main],
             jsx: "automatic",
             //jsxImportSource: "peabrian-jsx",
@@ -30,10 +30,10 @@ export class PeakernelBundler {
             }
         }
 
-        let ev={cwd: this.cwd, chain: this.chain, esbuildConf};
+        let ev={cwd: this.cwd, chain: this.chain, esbuildConfig};
         await this.chain.bundleConf(ev);
 
-        const result=await esbuild.build(esbuildConf);
+        const result=await esbuild.build(esbuildConfig);
         let source=new TextDecoder("utf-8").decode(result.outputFiles[0].contents);
         source=`(async ()=>{${source}})()`;
 
