@@ -60,8 +60,9 @@ export async function deploy({cwd, chain, port, args, main}) {
     console.log("Deploy: "+deployFile);
     let bundler=new PeakernelBundler({cwd, chain, main: deployFile});
     let device=await createDevice({port});
-    //let mainContent=await fsp.readFile(deployFile);
-    await device.writeFile("/boot.js",await bundler.getBundleAiife());
+    let bundleContent=await bundler.getBundleAiife();
+    console.log("Bundle: "+bundleContent.length+" bytes");
+    await device.writeFile("/boot.js",bundleContent);
     await device.scheduleRestart(true);
     await device.awaitBoot();
     await device.close();
