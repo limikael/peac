@@ -1,8 +1,8 @@
-# peakernel
+# Peakernel
 
-> A fully pluggable embedded platform where capabilities, runtime, and communication are unified and transport-independent.
+Peakernel compiles your JavaScript into a compact bytecode firmware for microcontrollers. You work locally - save a file, and within a second your device runs the updated bundle. Because everything is resolved at build time, there are no dynamic imports or runtime surprises, just a predictable system running exactly what you built. Native C++ plugins extend hardware capabilities like dependencies, giving you a workflow that feels as immediate as CircuitPython, but scales into something far more structured and reliable.
 
-## Why peakernel?
+## Why Peakernel?
 
 Peakernel brings a modern developer experience to embedded systems:
 
@@ -191,6 +191,27 @@ Instead:
 * Hardware capabilities installable via npm
 * Devices accessible locally or remotely with the same commands
 * One system for firmware, runtime, CLI, and automation
+
+## Microcontroller Dev Stack Comparison
+
+|                                   | CircuitPython               | Espruino            | Moddable SDK          | peakernel                                |
+| --------------------------------- | --------------------------- | ------------------- | --------------------- | ---------------------------------------- |
+| **Primary language**              | Python                      | JavaScript          | JavaScript            | JavaScript                               |
+| **Execution model**               | Interpreted                 | Interpreted         | Compiled (XS engine)  | Precompiled bytecode (QuickJS)           |
+| **Iteration loop**                | Edit on device, auto-reload | REPL + live upload  | Build + deploy        | Save locally → auto bundle + flash (<1s) |
+| **Setup complexity**              | Very low                    | Very low            | Medium                | Medium (one-time)                        |
+| **Code location**                 | Files on device             | Stored on device    | Built into firmware   | Bundled artifact                         |
+| **Bundling**                      | None                        | None                | Partial               | Full (via esbuild)                       |
+| **Dependency model**              | Built-in modules            | Manual libs         | Moddable ecosystem    | npm ecosystem                            |
+| **Runtime dependency resolution** | Yes                         | Yes                 | Limited               | None (resolved at build)                 |
+| **Startup behavior**              | Load + interpret files      | Interpret source    | Load compiled modules | Execute precompiled bytecode             |
+| **Memory predictability**         | Lower                       | Lower               | Medium                | Higher (fixed bundle + VM)               |
+| **Performance**                   | Interpreter-limited         | Interpreter-limited | Good                  | Good (no parsing, optimized bundle)      |
+| **Native extensions**             | Possible, uncommon          | Limited             | Supported             | First-class (C++ plugins via npm)        |
+| **Extending hardware**            | Firmware rebuild            | Firmware changes    | Native modules        | `npm install` plugin + flash             |
+| **Project structure**             | Script-based                | Script-based        | Structured SDK        | Structured, build-based                  |
+| **Scaling projects**              | Can get messy               | Can get messy       |                       |                                          |
+
 
 ## Related
 
