@@ -8,9 +8,6 @@
   },
   "type": "module",
   "packageManager": "pnpm@10.28.2",
-  "disablePlugins": [
-    "pk-littlefs"
-  ],
   "dependencies": {
     "canopener": "^1.0.0"
   }
