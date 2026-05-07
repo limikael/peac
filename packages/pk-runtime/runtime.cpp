@@ -3,6 +3,9 @@
 //#include "Fs.h"
 #include <cassert>
 #include "encoding.h"
+#ifdef ARDUINO
+#include <Arduino.h>
+#endif
 
 void serialWriteString(std::string s) {
 #if defined(ARDUINO)
