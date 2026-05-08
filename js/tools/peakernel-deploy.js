@@ -63,6 +63,7 @@ export async function deploy({cwd, chain, port, args, main}) {
     let bundleContent=await bundler.getBundleAiife();
     console.log("Bundle: "+bundleContent.length+" bytes");
     await device.writeFile("/boot.js",bundleContent);
+    console.log("Restarting...");
     await device.scheduleRestart(true);
     await device.awaitBoot();
     await device.close();
