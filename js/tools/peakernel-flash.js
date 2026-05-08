@@ -258,7 +258,7 @@ class PeakernelFlasher {
 
         let content=`
             ${ev.bootContent}
-            ${ev.getBootFiles().map(f=>fs.readFileSync(f,"utf8")).join("\n")}
+            ${await ev.getBootContent()}
             ${mainContent}
         `;
 

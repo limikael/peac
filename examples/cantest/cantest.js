@@ -1,4 +1,4 @@
-initEspBus(5,4);
+//initEspBus(5,4);
 
 setInterval(()=>{
 	//console.log("writing...");
@@ -12,9 +12,8 @@ getBus().on("slcan",s=>{
 
 //gc();
 
-globalThis.m=new MasterDevice(getBus());
-globalThis.d=globalThis.m.createRemoteDevice(5);
-let d=globalThis.d;
+let m=getMasterDevice();
+let d=m.createRemoteDevice(5);
 
 d.insert(0x2001,1);
 d.insert(0x6201,1);

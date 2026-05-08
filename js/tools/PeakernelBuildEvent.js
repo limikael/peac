@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 export default class PeakernelBuildEvent {
     constructor() {
         this.bindings=[];
@@ -13,6 +15,7 @@ export default class PeakernelBuildEvent {
         this.externalBootFile=false;
         this.libDeps=[];
         this.board="";
+        this.env=process.env;
     }
 
     setBoard(b) {
@@ -32,12 +35,23 @@ export default class PeakernelBuildEvent {
     }
 
     addBootFile(bootFile, {priority}={priority: 10}) {
-        this.bootFiles.sort((a,b)=>a.priority-b.priority);
         this.bootFiles.push({pathname: bootFile, priority: priority});
+        this.bootFiles.sort((a,b)=>a.priority-b.priority);
     }
 
-    getBootFiles() {
-        return this.bootFiles.map(f=>f.pathname);
+    addBootContent(bootContent, {priority}={priority: 10}) {
+        this.bootFiles.push({content: bootContent, priority: priority});
+        this.bootFiles.sort((a,b)=>a.priority-b.priority);
+    }
+
+    async getBootContent() {
+        this.bootFiles.sort((a,b)=>a.priority-b.priority);
+        return (this.bootFiles.map(e=>{
+            if (e.pathname)
+                e.content=fs.readFileSync(e.pathname,"utf8");
+
+            return e.content;
+        }).join("\n"));
     }
 
     addBinding(binding) {
